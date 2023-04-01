@@ -3,6 +3,11 @@
 - Data and resource isolation with ABAC and RBAC
 - Multidomain
 
+
+- start with no S3 access
+
+
+
 ## Test secure S3 access
 To verify the access to the Amazon S3 buckets for the data science environment, you can run the following commands in the Studio terminal:
 
@@ -32,7 +37,13 @@ aws sts get-caller-identity
 ```
 ![get role](../img/sagemaker-execution-role.png)
 
-All operations are performed under the SageMaker execution role.
+All operations are performed under the SageMaker user profile execution role.
+
+## Additional resources
+The following resources provide additional details and reference for data security and access topics.
+
+- [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/)
+
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0

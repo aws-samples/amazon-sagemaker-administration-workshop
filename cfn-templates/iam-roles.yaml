@@ -1,0 +1,730 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create IAM Roles for SageMaker user profiles
+
+Outputs:
+
+  StudioRoleDefaultArn:
+    Description: The ARN of the SageMaker default execution role
+    Value: !GetAtt StudioRoleDefault.Arn
+
+  StudioRoleDataScienceArn:
+    Description: The ARN of the SageMaker Data Science execution role
+    Value: !GetAtt StudioRoleDataScience.Arn
+  
+  StudioRoleMLOpsArn:
+    Description: The ARN of the SageMaker MLOps execution role
+    Value: !GetAtt StudioRoleMLOps.Arn
+
+  VPCFlowLogsRoleArn:
+    Description: The ARN of the VPC Flow Logs role
+    Value: !GetAtt VPCFlowLogsRole.Arn
+
+Parameters:
+  AllowedCIDR:
+    Type: String
+    Description: Allowed CIDR block for CreatePresignedDomainURL API call
+    Default: '0.0.0.0/0'
+  
+Conditions:
+  RestrictSageMakerToCIDRCondition: !Not [ !Equals [ !Ref AllowedCIDR, ''] ]
+
+Resources:
+
+  SageMakerDeniedServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Explicit deny for specific SageMaker API calls
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AmazonSageMakerDeniedServices
+            Action:
+              - sagemaker:CreatePresignedNotebookInstanceUrl
+              - sagemaker:*NotebookInstance
+              - sagemaker:*NotebookInstanceLifecycleConfig
+              - sagemaker:CreateUserProfile
+              - sagemaker:DeleteDomain
+              - sagemaker:DeleteUserProfile
+            Resource: 
+              - '*'
+            Effect: Deny
+
+  SageMakerReadOnlyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Read-only baseline policy for SageMaker execution role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AmazonSageMakerDescribeReadyOnlyPolicy
+            Action:
+              - sagemaker:Describe*
+              - sagemaker:GetSearchSuggestions
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: AmazonSageMakerListOnlyPolicy
+            Action:
+              - 'sagemaker:List*'
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: AmazonSageMakerUIandMetricsOnlyPolicy
+            Action:
+              - sagemaker:*App
+              - sagemaker:Search
+              - sagemaker:RenderUiTemplate
+              - sagemaker:BatchGetMetrics
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*' 
+            Effect: Allow
+          - Sid: AmazonSageMakerEC2ReadOnlyPolicy
+            Action:
+              - ec2:DescribeDhcpOptions
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeRouteTables
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeVpcEndpoints
+              - ec2:DescribeVpcs
+            Resource:
+              - !Sub 'arn:aws:ec2:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: AmazonSageMakerIAMReadOnlyPolicy
+            Action:
+              - iam:ListRoles
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:*'
+            Effect: Allow
+
+  SageMakerAccessSupportingServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Baseline policy for additional AWS service access
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AmazonSageMakerCRUDAccessS3Policy
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:AbortMultipartUpload
+              - s3:DeleteObject
+              - s3:CreateBucket
+              - s3:ListBucket
+              - s3:PutBucketCORS
+              - s3:ListAllMyBuckets
+              - s3:GetBucketCORS
+              - s3:GetBucketLocation
+            Resource:
+              - arn:aws:s3:::*SageMaker*
+              - arn:aws:s3:::*Sagemaker*
+              - arn:aws:s3:::*sagemaker*
+            Effect: Allow
+          - Sid: AmazonSageMakerReadOnlyAccessKMSPolicy
+            Action:
+              - kms:DescribeKey
+              - kms:ListAliases
+            Resource:
+              - !Sub 'arn:aws:kms:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: AmazonSageMakerCRUDAccessECRPolicy
+            Action:
+              - ecr:Set*
+              - ecr:CompleteLayerUpload
+              - ecr:Batch*
+              - ecr:Upload*
+              - ecr:InitiateLayerUpload
+              - ecr:Put*
+              - ecr:Describe*
+              - ecr:CreateRepository
+              - ecr:Get*
+              - ecr:StartImageScan
+            Resource:
+              - '*'
+            Effect: Allow
+          - Sid: AmazonSageMakerCRUDAccessCloudWatchPolicy
+            Action:
+              - cloudwatch:Put*
+              - cloudwatch:Get*
+              - cloudwatch:List*
+              - cloudwatch:DescribeAlarms
+              - logs:Put*
+              - logs:Get*
+              - logs:List*
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:ListLogDeliveries
+              - logs:Describe*
+              - logs:CreateLogDelivery
+              - logs:PutResourcePolicy
+              - logs:UpdateLogDelivery
+            Resource:
+              - '*'
+            Effect: Allow
+
+  SageMakerStudioDeveloperAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Baseline policy for SageMaker developer user profile execution role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AmazonSageMakerStudioCreateApp
+            Action:
+              - sagemaker:CreateApp
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: PassUserProfileExecutionRole
+            Action:
+              - iam:PassRole
+            Resource: # Use here the user profile execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Effect: Allow
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: AmazonSageMakerInvokeEndPointRole
+            Action:
+              - sagemaker:InvokeEndpoint
+            Resource:
+              - '*'
+            Effect: Allow
+          - Sid: AmazonSageMakerTags
+            Action:
+              - sagemaker:AddTags
+              - sagemaker:ListTags
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+          - Sid: AmazonSageMakerCreate
+            Action:
+              - sagemaker:Create*
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+            Condition:
+              ForAnyValue:StringEquals:
+                aws:TagKeys:
+                  - team
+              StringEqualsIfExists:
+                aws:RequestTag/team: ${aws:PrincipalTag/team}
+          - Sid: AmazonSageMakerUpdateDeleteExecutePolicy
+            Action:
+              - sagemaker:Delete*
+              - sagemaker:Stop*
+              - sagemaker:Update*
+              - sagemaker:Start*
+              - sagemaker:DisassociateTrialComponent
+              - sagemaker:AssociateTrialComponent
+              - sagemaker:BatchPutMetrics
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Effect: Allow
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/team: ${sagemaker:ResourceTag/team}
+
+  SageMakerStudioDataScienceAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Baseline policy for SageMaker Data Science user profile execution role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PassModelExecutionRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: # Use here your model execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: PassSageMakerJobExecutionRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: # Use here your SageMaker job execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: CommonJobManagement
+            Action:
+                - sagemaker:CreateTrainingJob
+                - sagemaker:CreateTransformJob
+                - sagemaker:CreateProcessingJob
+                - sagemaker:CreateAutoMLJob
+                - sagemaker:CreateHyperParameterTuningJob
+                - sagemaker:StopTrainingJob
+                - sagemaker:StopProcessingJob
+                - sagemaker:StopAutoMLJob
+                - sagemaker:StopHyperParameterTuningJob
+                - sagemaker:DescribeTrainingJob
+                - sagemaker:DescribeTransformJob
+                - sagemaker:DescribeProcessingJob
+                - sagemaker:DescribeAutoMLJob
+                - sagemaker:DescribeHyperParameterTuningJob
+                - sagemaker:UpdateTrainingJob
+                - sagemaker:BatchGetMetrics
+            Resource: 
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*/*'
+            Effect: Allow
+          - Effect: Allow
+            Action:
+              - sagemaker:Search
+              - sagemaker:ListTrainingJobs
+              - sagemaker:ListTransformJobs
+              - sagemaker:ListProcessingJobs
+              - sagemaker:ListAutoMLJobs
+              - sagemaker:ListCandidatesForAutoMLJob
+              - sagemaker:ListHyperParameterTuningJobs
+              - sagemaker:ListTrainingJobsForHyperParameterTuningJob
+            Resource: "*"
+          - Sid: Experiments
+            Effect: Allow
+            Action:
+              - sagemaker:AddAssociation
+              - sagemaker:CreateAction
+              - sagemaker:CreateArtifact
+              - sagemaker:CreateContext
+              - sagemaker:CreateExperiment
+              - sagemaker:CreateTrial
+              - sagemaker:CreateTrialComponent
+              - sagemaker:UpdateAction
+              - sagemaker:UpdateArtifact
+              - sagemaker:UpdateContext
+              - sagemaker:UpdateExperiment
+              - sagemaker:UpdateTrial
+              - sagemaker:UpdateTrialComponent
+              - sagemaker:AssociateTrialComponent
+              - sagemaker:DisassociateTrialComponent
+              - sagemaker:DeleteAssociation
+              - sagemaker:DeleteAction
+              - sagemaker:DeleteArtifact
+              - sagemaker:DeleteContext
+              - sagemaker:DeleteExperiment
+              - sagemaker:DeleteTrial
+              - sagemaker:DeleteTrialComponent
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:DescribeAction
+              - sagemaker:DescribeArtifact
+              - sagemaker:DescribeContext
+              - sagemaker:DescribeExperiment
+              - sagemaker:DescribeTrial
+              - sagemaker:DescribeTrialComponent
+              - sagemaker:DescribeLineageGroup
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListAssociations
+              - sagemaker:ListActions
+              - sagemaker:ListArtifacts
+              - sagemaker:ListContexts
+              - sagemaker:ListExperiments
+              - sagemaker:ListTrials
+              - sagemaker:ListTrialComponents
+              - sagemaker:ListLineageGroups
+              - sagemaker:GetLineageGroupPolicy
+              - sagemaker:QueryLineage
+              - sagemaker:Search
+              - sagemaker:GetSearchSuggestions
+            Resource: "*"
+          - Sid: ModelManagement
+            Effect: Allow
+            Action:
+              - sagemaker:CreateModel
+              - sagemaker:CreateModelPackage
+              - sagemaker:CreateModelPackageGroup
+              - sagemaker:DescribeModel
+              - sagemaker:DescribeModelPackage
+              - sagemaker:DescribeModelPackageGroup
+              - sagemaker:BatchDescribeModelPackage
+              - sagemaker:UpdateModelPackage
+              - sagemaker:DeleteModel
+              - sagemaker:DeleteModelPackage
+              - sagemaker:DeleteModelPackageGroup
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListModels
+              - sagemaker:ListModelPackages
+              - sagemaker:ListModelPackageGroups
+            Resource: "*"
+          - Sid: StudioApp
+            Effect: Allow
+            Action:
+              - sagemaker:CreateApp
+              - sagemaker:DeleteApp
+              - sagemaker:DescribeApp
+              - sagemaker:DescribeAppImageConfig
+              - sagemaker:DescribeDomain
+              - sagemaker:DescribeUserProfile
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListApps
+              - sagemaker:ListAppImageConfigs
+              - sagemaker:ListDomains
+              - sagemaker:ListUserProfiles
+            Resource: "*"
+
+  SageMakerStudioMLOpsAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Baseline policy for SageMaker MLOps user profile execution role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PassModelExecutionRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: # Use here your model execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: PassSageMakerJobExecutionRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: # Use here your SageMaker job execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: PassModelMonitorExecutionRole
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: # Use here your SageMaker Model Monitor execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: PassSageMakerPipelineExecutionRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: # Use here your SageMaker Pipeline execution role ARN
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: CommonJobManagement
+            Action:
+                - sagemaker:CreateTrainingJob
+                - sagemaker:CreateTransformJob
+                - sagemaker:CreateProcessingJob
+                - sagemaker:CreateAutoMLJob
+                - sagemaker:CreateHyperParameterTuningJob
+                - sagemaker:StopTrainingJob
+                - sagemaker:StopProcessingJob
+                - sagemaker:StopAutoMLJob
+                - sagemaker:StopHyperParameterTuningJob
+                - sagemaker:DescribeTrainingJob
+                - sagemaker:DescribeTransformJob
+                - sagemaker:DescribeProcessingJob
+                - sagemaker:DescribeAutoMLJob
+                - sagemaker:DescribeHyperParameterTuningJob
+                - sagemaker:UpdateTrainingJob
+                - sagemaker:BatchGetMetrics
+            Resource: 
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*/*'
+            Effect: Allow
+          - Effect: Allow
+            Action:
+              - sagemaker:Search
+              - sagemaker:ListTrainingJobs
+              - sagemaker:ListTransformJobs
+              - sagemaker:ListProcessingJobs
+              - sagemaker:ListAutoMLJobs
+              - sagemaker:ListCandidatesForAutoMLJob
+              - sagemaker:ListHyperParameterTuningJobs
+              - sagemaker:ListTrainingJobsForHyperParameterTuningJob
+            Resource: "*"
+          - Sid: EndpointDeployment
+            Effect: Allow
+            Action:
+              - sagemaker:CreateEndpointConfig
+              - sagemaker:CreateEndpoint
+              - sagemaker:DeleteEndpointConfig
+              - sagemaker:DeleteEndpoint
+              - sagemaker:UpdateEndpoint
+              - sagemaker:UpdateEndpointWeightsAndCapacities
+              - sagemaker:DescribeEndpoint
+              - sagemaker:DescribeEndpointConfig
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListEndpoints
+              - sagemaker:ListEndpointConfigs
+            Resource: "*"
+          - Sid: Experiments
+            Effect: Allow
+            Action:
+              - sagemaker:AddAssociation
+              - sagemaker:CreateAction
+              - sagemaker:CreateArtifact
+              - sagemaker:CreateContext
+              - sagemaker:CreateExperiment
+              - sagemaker:CreateTrial
+              - sagemaker:CreateTrialComponent
+              - sagemaker:UpdateAction
+              - sagemaker:UpdateArtifact
+              - sagemaker:UpdateContext
+              - sagemaker:UpdateExperiment
+              - sagemaker:UpdateTrial
+              - sagemaker:UpdateTrialComponent
+              - sagemaker:AssociateTrialComponent
+              - sagemaker:DisassociateTrialComponent
+              - sagemaker:DeleteAssociation
+              - sagemaker:DeleteAction
+              - sagemaker:DeleteArtifact
+              - sagemaker:DeleteContext
+              - sagemaker:DeleteExperiment
+              - sagemaker:DeleteTrial
+              - sagemaker:DeleteTrialComponent
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:DescribeAction
+              - sagemaker:DescribeArtifact
+              - sagemaker:DescribeContext
+              - sagemaker:DescribeExperiment
+              - sagemaker:DescribeTrial
+              - sagemaker:DescribeTrialComponent
+              - sagemaker:DescribeLineageGroup
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListAssociations
+              - sagemaker:ListActions
+              - sagemaker:ListArtifacts
+              - sagemaker:ListContexts
+              - sagemaker:ListExperiments
+              - sagemaker:ListTrials
+              - sagemaker:ListTrialComponents
+              - sagemaker:ListLineageGroups
+              - sagemaker:GetLineageGroupPolicy
+              - sagemaker:QueryLineage
+              - sagemaker:Search
+              - sagemaker:GetSearchSuggestions
+            Resource: "*"
+          - Sid: ModelManagement
+            Effect: Allow
+            Action:
+              - sagemaker:CreateModel
+              - sagemaker:CreateModelPackage
+              - sagemaker:CreateModelPackageGroup
+              - sagemaker:DescribeModel
+              - sagemaker:DescribeModelPackage
+              - sagemaker:DescribeModelPackageGroup
+              - sagemaker:BatchDescribeModelPackage
+              - sagemaker:UpdateModelPackage
+              - sagemaker:DeleteModel
+              - sagemaker:DeleteModelPackage
+              - sagemaker:DeleteModelPackageGroup
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListModels
+              - sagemaker:ListModelPackages
+              - sagemaker:ListModelPackageGroups
+            Resource: "*"
+          - Sid: ModelMonitoring
+            Effect: Allow
+            Action:
+              - sagemaker:CreateMonitoringSchedule
+              - sagemaker:UpdateMonitoringSchedule
+              - sagemaker:DescribeMonitoringSchedule
+              - sagemaker:DeleteMonitoringSchedule
+              - sagemaker:StartMonitoringSchedule
+              - sagemaker:StopMonitoringSchedule
+              - sagemaker:CreateProcessingJob
+              - sagemaker:DescribeProcessingJob
+              - sagemaker:StopProcessingJob
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListMonitoringSchedules
+              - sagemaker:ListProcessingJobs
+            Resource: "*"
+          - Sid: PipelineManagement
+            Effect: Allow
+            Action:
+              - sagemaker:CreatePipeline
+              - sagemaker:StartPipelineExecution
+              - sagemaker:StopPipelineExecution
+              - sagemaker:RetryPipelineExecution
+              - sagemaker:UpdatePipelineExecution
+              - sagemaker:SendPipelineExecutionStepSuccess
+              - sagemaker:SendPipelineExecutionStepFailure
+              - sagemaker:DescribePipeline
+              - sagemaker:DescribePipelineExecution
+              - sagemaker:DescribePipelineDefinitionForExecution
+              - sagemaker:DeletePipeline
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListPipelines
+              - sagemaker:ListPipelineExecutions
+              - sagemaker:ListPipelineExecutionSteps
+              - sagemaker:ListPipelineParametersForExecution
+            Resource: "*"
+          - Sid: StudioApp
+            Effect: Allow
+            Action:
+              - sagemaker:CreateApp
+              - sagemaker:CreateAppImageConfig
+              - sagemaker:UpdateAppImageConfig
+              - sagemaker:DeleteApp
+              - sagemaker:DeleteAppImageConfig
+              - sagemaker:DescribeApp
+              - sagemaker:DescribeAppImageConfig
+              - sagemaker:DescribeDomain
+              - sagemaker:DescribeUserProfile
+            Resource: arn:aws:sagemaker:*:*:*/*
+          - Effect: Allow
+            Action:
+              - sagemaker:ListApps
+              - sagemaker:ListAppImageConfigs
+              - sagemaker:ListDomains
+              - sagemaker:ListUserProfiles
+            Resource: "*"
+
+  RestrictSageMakerToCIDRPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Deny
+            Action:
+              - 'sagemaker:*'
+            Resource: !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:user-profile/*/*'
+            Condition:
+              NotIpAddress:
+                  aws:VpcSourceIp: !If [RestrictSageMakerToCIDRCondition, !Ref AllowedCIDR, '0.0.0.0/0']
+
+  SageMakerPermissionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sagemaker:CreatePresignedDomainUrl'
+              - 'sagemaker:ListUserProfiles'
+              - 'sagemaker:CreateUserProfile'
+              - 'sagemaker:DescribeUserProfile'
+              - 'sagemaker:AddTags'
+              - 'sagemaker:ListTags'
+            Resource: !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:user-profile/*/*'
+
+
+  StudioRoleDefault:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref SageMakerReadOnlyPolicy
+        - !Ref SageMakerDeniedServicesPolicy
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
+
+  StudioRoleDataScience:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref SageMakerReadOnlyPolicy
+        - !Ref SageMakerAccessSupportingServicesPolicy
+        - !Ref SageMakerStudioDeveloperAccessPolicy
+        - !Ref SageMakerStudioDataScienceAccessPolicy
+        - !Ref SageMakerDeniedServicesPolicy
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
+        - Key: role-type
+          Value: datascience 
+
+  StudioRoleMLOps:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref SageMakerReadOnlyPolicy
+        - !Ref SageMakerAccessSupportingServicesPolicy
+        - !Ref SageMakerStudioDeveloperAccessPolicy
+        - !Ref SageMakerStudioMLOpsAccessPolicy
+        - !Ref SageMakerDeniedServicesPolicy
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
+        - Key: role-type
+          Value: mlops
+
+  VPCFlowLogsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: Rights to Publish VPC Flow Logs to CloudWatch Logs
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - vpc-flow-logs.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CloudWatchLogGroup
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: CloudWatchLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/vpcflowlogs/sagemaker-admin-workshop-${AWS::Region}-${AWS::AccountId}*' 
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}

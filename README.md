@@ -5,6 +5,7 @@ Working with hands-on examples, you will learn about the recommended design prin
 
 ## Workshop content
 - [Secure setup of Amazon SageMaker domain](content/01-lab-01/lab-01.md)
+- [SageMaker execution roles](content/01-lab-01/lab-01.md)
 - [User and profile management for SageMaker domain](content/01-lab-01/lab-01.md)
 - [Network and data security in the context of ML workloads and Amazon SageMaker](](content/01-lab-01/lab-01.md)) 
 - [Data and resource isolation using attribute-based access control (ABAC) and role-based access control (RBAC)](content/02-lab-02/lab-02.md)
@@ -33,6 +34,7 @@ This is a collection of documentation, blog posts, and code repository links for
 
 ### Whitepapers and documentation
 - [SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
+- [Infrastructure Security in Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html)
 
 ### Blog posts
 
