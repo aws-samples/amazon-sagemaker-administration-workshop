@@ -30,5 +30,7 @@ Security specialists, administrators, MLOps engineers, and DevOps.
 ## Time to complete
 To complete the labs 1 to 3 you need approximately between two and three hours. 
 
+---
+
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0

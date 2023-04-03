@@ -117,6 +117,8 @@ aws sts get-caller-identity
 
 All operations are performed under the SageMaker user profile execution role.
 
+## Conclusion
+
 ## Additional resources
 The following resources provide additional details and reference for data security and access topics.
 
@@ -124,6 +126,7 @@ The following resources provide additional details and reference for data securi
 - [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/)
 - [Key policies in AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html)
 
+---
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0

@@ -62,6 +62,8 @@ We use an Amazon S3 bucket policy explicitly denies all access which is **not or
 
 S3 VPC endpoint policy allows access only to the specified S3 project buckets with data, models and CI/CD pipeline artifacts, SageMaker-owned S3 bucket and S3 objects which are used for product provisioning.
 
+List of common guardrails in [Permission management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
+
 ### Detective
 Logging and monitoring. You can use the following AWS services:
 - AWS CloudWatch
@@ -166,6 +168,12 @@ xgb = sagemaker.estimator.Estimator(
 ```
 
 You are able to create and run the training job.
+
+## Conclusion
+
+## Additional resources
+
+---
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0

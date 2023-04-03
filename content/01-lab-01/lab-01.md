@@ -530,7 +530,7 @@ Finally, re-run the `create-presigned-domain-url` command in the terminal. Now t
 
 ![](../../static/img/create-presigned-url-output.png)
 
-Copy this url and paste in a browser. You'll redirected to the Studio.
+Copy this url and paste it in a browser. You'll redirected to the Studio.
 
 Congratulations, you successfully tested the Studio access control!
 
@@ -542,10 +542,55 @@ Each user signs in to their Studio environment via a presigned URL from an AWS I
 TBD
 
 ## Step 7: control user permissions with IAM identity-based policies
-In addition to Studio access controls via IAM policy conditions, you can manage user permissions via the execution roles.
+In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the execution roles.
 
+The recommended practice is to define relevant roles and applications involved in your ML lifecycle and assign ownership. You define the required AWS permissions based on role and application activities and resource access they need.
 
-User profiles with different execution roles
+For example, if you have a team of data scientists and a team of MLOps engineers, you can provision two IAM roles, a Data Science role and a MLOps role. These roles have different permissions based on actions and data access each role needs.
+
+A good starting point to design IAM roles is the [SageMaker role manager](https://docs.aws.amazon.com/sagemaker/latest/dg/role-manager.html). Using the role manager, you can generate IAM policies, including network perimeter conditions and finalize them with your specific requirements. The SageMaker Studio Administration Best Practices contains a [list of sample IAM policies](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html) for user roles such as ML admin, data scientist, and application execution policy. 
+
+Another type of IAM roles are execution service roles. SageMaker launches jobs such as training, processing, and batch transforms or pipelines on a user's behalf. The user _passes_ the designated execution role to the SageMaker service. To be able to pass an execution role, the principal must have `iam:PassRole` permission. For example, both DataScience and MLOps roles you provisioned in the IAM stack have `PassRole` permissions:
+```json
+{
+    "Condition": {
+        "StringEquals": {
+            "iam:PassedToService": "sagemaker.amazonaws.com"
+        }
+    },
+    "Action": "iam:PassRole",
+    "Resource": [
+        "arn:aws:iam::949335012047:role/*StudioRole*"
+    ],
+    "Effect": "Allow",
+    "Sid": "PassModelExecutionRole"
+}
+```
+In this policy statement the user can pass any role within the account with `StudioRole` as a part of the role name. In a real-world IAM policy you need to specify what exactly IAM role the user is allowed to pass. 
+
+For more details refer to the document on [IAM PassRole](./iam-passrole.md).
+
+### Experiment with user permissions in a Studio notebook
+Now you move to Studio to do some experimentation in a notebook.
+Launch Studio via the Data Scientist user profile your created before.
+
+To use the provided notebooks you must clone the source code repository into your Studio environment.
+
+After you open Studio select **File** in the top menu, then **New**, then **Terminal**:
+
+![](/static/img/studio-system-terminal-via-menu.png)
+
+Run the following command in the terminal:
+```
+git clone https://github.com/aws-samples/amazon-sagemaker-administration-workshop.git
+```
+
+The code repository will be downloaded and saved in your home directory in Studio.
+
+#### Open the notebook
+Navigate to the folder `amazon-sagemaker-administration-workshop` in the Studio file browser. Open the `notebooks` folder and open the `01-lab-01.ipynb` notebook. Select the `Data Science` kernel and follow the instructions.
+
+After you played with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
 
 ## Step 8: control network traffic for Studio notebooks
 
@@ -628,6 +673,7 @@ The following resources provide additional details and reference for SageMaker n
 - [Securing Amazon SageMaker Studio connectivity using a private VPC](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-connectivity-using-a-private-vpc/)
 - [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/)
 
+---
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0
