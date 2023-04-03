@@ -1,6 +1,8 @@
 # Lab 1: Amazon SageMaker domain setup, network security, IAM, and user management
 This lab shows how to create a secure environment for your data science workloads, starting with the network. You learn concepts of SageMaker domain, domain network modes, and network traffic controls. Additionally you provision IAM execution roles, permission policies, and AWS KMS encryption keys.
 
+---
+
 ## Content
 In this lab you're going to do:
 - Create SageMaker IAM execution roles for Studio users
@@ -351,7 +353,7 @@ Repeat the same steps to create one more user profile for an MLOps user. This us
 
 Wait until SageMaker finishes creating the user profile.
 
-## Step 6: sign in to Studio
+## Step 6: launch Studio
 After your created the domain and added the user profiles to it, you can sign in to Studio.
 
 Users can sign in to Studio using the following ways:
@@ -359,31 +361,250 @@ Users can sign in to Studio using the following ways:
 - via a presigned domain URL
 - via IAM Identity Center
 
-Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity center portal without the need to go to the console in their AWS account. You custom profile management backend uses an API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user.
+Before your start experimenting with Studio sign-in, let's consider how you can control access to Studio within your network environment.
 
-Studio supports several access control enforcements you can use to limit access to Studio for:
+### Network perimeter-based access to Studio
+Studio supports several access control enforcements for network perimeter you can use to limit access to Studio for:
 
-- clients residing only in a designated VPC
+- user agents residing only in a designated VPC
 - sign-in requests originated only from a designated IP address or CIDR
 - sign-in requests originated only via a designated VPC endpoint
 
-To implement Studio notebooks access restrictions, you must use [IAM policy conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#api-access-policy) in the requesting user IAM role. For more details refer to [restrict access to the Studio IDE](https://aws.amazon.com/about-aws/whats-new/2020/12/secure-sagemaker-studio-access-using-aws-privatelink-aws-iam-sourceip-restrictions/) documentation in the Developer Guide and to [Securing access to the pre-signed URL](http://aws.amazon.com/blogs/machine-learning/secure-amazon-sagemaker-studio-presigned-urls-part-1-foundational-infrastructure/) blog post for a hands-on example of a custom API to generate a presigned URL for Studio access.
+The following diagram shows a general setup for connectivity for a user AWS account, the Studio account and AWS services.
+
+![](../../static/design/sagemaker-studio-vpce-access.drawio.svg)
+
+1. A user is federated into a AWS Account with a designated VPC for Studio and SageMaker access. All network traffic to Studio and SageMaker API goes via the corresponding VPC endpoints in the VPC. To call the SageMaker API through the VPC endpoint, the user has to connect from an instance that is inside the VPC or connect their private network to the VPC by using an AWS VPN or AWS Direct Connect. Refer to the next section **VPC endpoint considerations for Studio and SageMaker API access** for more details.
+2. User IAM role permissions controls all access to SageMaker API and resources including Studio.
+3. User sign in to Studio via `CreatePresignedDomainUrl`. The Studio is deployed in a dedicated AWS Account and a VPC.
+4. All network traffic between Studio notebooks and AWS services goes via corresponding VPC endpoints and never enters public internet.
+
+This setup ensures that all network traffic stays within a private network and your control. 
+
+To implement Studio access restrictions, you must use [IAM policy conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#api-access-policy) in the requesting user IAM role. For more details refer to [restrict access to the Studio IDE](https://aws.amazon.com/about-aws/whats-new/2020/12/secure-sagemaker-studio-access-using-aws-privatelink-aws-iam-sourceip-restrictions/) documentation in the Developer Guide and to [Securing access to the pre-signed URL](http://aws.amazon.com/blogs/machine-learning/secure-amazon-sagemaker-studio-presigned-urls-part-1-foundational-infrastructure/) blog post for a hands-on example of a custom API to generate a presigned URL for Studio access.
+
+For IAM policy examples refer to [Permission management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html) in the SageMaker Studio Administration Best Practices whitepaper.
+
+You're going to experiment with Studio access management in the next section.
+
+#### VPC endpoint considerations for Studio and SageMaker API access
+To be able to control access to Studio and SageMaker API within your network perimeter, you must place a user agent such as EC2 instance, VM, or VPN into a controlled VPC. This VPC must have at least two VPC endpoints for Studio connectivity:
+- VPC endpoint for the Studio
+- VPC endpoint for the SageMaker API
+
+❗ At the time of this writing this feature is only supported if the domain is in IAM authentication mode, and is not supported in IAM Identity Center authentication mode.
+
+Use `aws.sagemaker.<Region>.studio` as the service name for Studio VPC endpoint. To connect to a SageMaker Notebook instance use `aws.sagemaker.<Region>.notebook` as the service name.
+
+In addition to creating an interface endpoint to connect to SageMaker Studio, you must create an interface endpoint to connect to the Amazon SageMaker API with `com.amazonaws.<Region>.sagemaker.api` as the service name. When the user calls `CreatePresignedDomainUrl` to get the URL to connect to Studio, that call goes through the interface endpoint used to connect to the SageMaker API.
+
+Security groups on your endpoint must allow inbound HTTPS:443 traffic from the security groups associated with the user agent.
+
+### Sign in to the Studio from the AWS Console
+To launch Studio from the AWS Console, follow the instructions in [Launch Studio Using the Amazon SageMaker Console](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-launch.html#studio-launch-console). You can use any of two existing user profiles your created in the previous step.
+
+If you are on the **Domain details** page, you can use **Launch** button for the corresponding user profile:
+
+![](../../static/img/aws-console-launch-studio.png)
+
+You'll be redirected to the Studio page. The first start takes about 5 minutes because SageMaker starts a JupyterServer app dedicated to the user profile.
+
+Let's restrict the location of user to the VPC you created in the previous step.
+
+Add the following inline policy to the IAM role you use to sign in to the AWS console. Replace the `<YOUR-VPC-ID>` with the VPC ID from the VPC stack output. Refer to [instructions how to add IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html) in the AWS IAM Developer Guide.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EnableSageMakerStudioAccessViaVPC",
+            "Effect": "Deny",
+            "Action": [
+                "sagemaker:CreatePresignedDomainUrl"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:SourceVpc": "<YOUR-VPC-ID>"
+                }
+            }
+        }
+    ]
+}
+```
+
+Open again the SageMaker console and launch Studio. This time you get `AccessDenied` exception:
+
+![](../../static/img/access-denied-studio-sign-in.png)
+
+The SageMaker console uses the `CreatePresignedDomainUrl` API call under the hood to sign in you to the Studio. This call is denied because launching the Studio from the AWS Console doesn't fulfill the IAM condition:
+```json
+"Condition": {
+                "StringNotEquals": {
+                    "aws:SourceVpc": "<YOUR-VPC-ID>"
+                }
+            }
+```
+
+You can use the same IAM policy to generally prevent users to launch Studio from the AWS Console. 
+
+If you use AWS Organizations, you can implement SCPs to centrally control prevent access to Studio via the AWS console. Attach the following SCP to the accounts that you'd like to restrict:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "sagemaker:*"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Condition": {
+        "NotIpAddress": {
+          "aws:VpcSourceIp": "<AuthorizedPrivateSubnet>"
+        }
+      },
+      "Action": [
+        "sagemaker:CreatePresignedDomainUrl"
+      ],
+      "Resource": "*",
+      "Effect": "Deny"
+    }
+  ]
+}
+```
+
+### Sign in to Studio with the presigned domain URL
+In this section you're going to use the AWS CLI command [`create-presigned-domain-url`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker/create-presigned-domain-url.html) to generate a Studio URL for sign-in.
+
+In the command terminal enter the following command:
+```sh
+aws sagemaker list-domains
+```
+
+Locate your domain by the name and choose the `DomainId`. Use this domain ID in the following command:
+```sh
+aws sagemaker create-presigned-domain-url \
+    --domain-id <DOMAIN-ID>
+    --user-profile-name <USER-PROFILE-NAME>
+```
+
+You get again the `AccessDenied` exception because of the VPC-based condition in the IAM policy of your IAM role:
+
+![](../../static/img/access-denied-studio-sign-in-cli.png)
+
+Let's re-write the IAM condition so that you able to launch studio from AWS CLI.
+
+First, get the public IP address for your environment. This example uses [checkip.amazonaws.com](checkip.amazonaws.com) or you can use your favorite method to the IP address:
+```sh
+curl checkip.amazonaws.com
+```
+
+Secondly, change the inline permission policy you added to your IAM role to the following:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EnableSageMakerStudioAccessViaVPC",
+            "Effect": "Deny",
+            "Action": [
+                "sagemaker:CreatePresignedDomainUrl"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "NotIpAddress": {
+                    "aws:SourceIp": "<YOUR PUBLIC IP ADDRESS"
+                }
+            }
+        }
+    ]
+}
+```
+
+Finally, re-run the `create-presigned-domain-url` command in the terminal. Now the command returns the `AuthorizedUrl`:
+
+![](../../static/img/create-presigned-url-output.png)
+
+Copy this url and paste in a browser. You'll redirected to the Studio.
+
+Congratulations, you successfully tested the Studio access control!
+
+❗ Remove the inline IAM policy for `sagemaker:CreatePresignedDomainUrl` from your IAM role.
+
+### Sign in to Studio from the AWS IAM Identity center
+Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity center portal without the need to go to the console in their AWS account. Your custom profile management backend uses an API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user.
+
+TBD
+
+## Step 7: control user permissions with IAM identity-based policies
+In addition to Studio access controls via IAM policy conditions, you can manage user permissions via the execution roles.
 
 
-
-## Step 7: control user access with IAM identity-based policies
-User access control
 User profiles with different execution roles
-Prevent users from using AWS Console to start Studio
 
 ## Step 8: control network traffic for Studio notebooks
+
+### Internet connectivity
 - internet-free environment
 - add a NAT gateway
-- add a VPC flow logs
-- using VPC endpoints and endpoints policies
-- specify VPCConfig for SageMaker jobs
 
 ![](../../static/img/pip-install-no-internet-connectivity.png)
+
+### VPC endpoints and endpoint policies
+- using VPC endpoints and endpoints policies
+    - for domain access
+
+You need to set up a custom DNS with [private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) for the Amazon VPC endpoint so SageMaker Studio can access the SageMaker API using the `api.sagemaker.<Region>.amazonaws.com` endpoint rather than using the VPC endpoint URL.
+
+Enable private DNS hostnames for your VPC endpoints. With private DNS you don't need to specify the endpoint URL (e.g. `<VPCE_ID>.api.sagemaker.<Region>.vpce.amazonaws.com`) in SageMaker API and Studio calls.
+
+#### VPC endpoint policy
+You can attach an Amazon VPC endpoint policy to the interface VPC endpoints that you use to connect to SageMaker Studio. The endpoint policy controls access to Studio. You can specify the following:
+- The principal that can perform actions.
+- The actions that can be performed.
+- The resources on which actions can be performed.
+
+Examples:  
+All users that have access to the endpoint are allowed to access the user profiles in the SageMaker Studio domain with the specified domain ID. Access to other domains is denied.
+```json
+{
+  "Statement": [
+      {
+          "Action": "sagemaker:CreatePresignedDomainUrl",
+          "Effect": "Allow",
+          "Resource": "arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:user-profile/<DOMAIN-ID>/*",
+          "Principal": "*"
+      }
+  ]
+}
+```
+
+To use a VPC endpoint with SageMaker Studio, your endpoint policy must allow the `CreateApp` operation on the KernelGateway app type. This allows traffic that is routed to through the VPC endpoint to call the `CreateApp` API.
+```json
+{
+ "Statement": [
+   {
+     "Action": "sagemaker:CreateApp",
+     "Effect": "Allow",
+     "Resource": "arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:user-profile/<DOMAIN-ID>/*",
+     "Principal": "*"
+   }
+ ]
+}
+```
+
+### Use network configuration in SageMaker jobs
+- specify VPCConfig for SageMaker jobs
+
+### Network traffic monitoring
+- VPC flow logs
+
+## Conclusion
 
 
 ## Additional resources
@@ -399,6 +620,14 @@ The following resources provide additional details and reference for SageMaker n
 - [Secure multi-account model deployment with Amazon SageMaker (blog series)](https://aws.amazon.com/blogs/machine-learning/part-1-secure-multi-account-model-deployment-with-amazon-sagemaker/)
 - [Team and user management with Amazon SageMaker and AWS SSO](https://aws.amazon.com/blogs/machine-learning/team-and-user-management-with-amazon-sagemaker-and-aws-sso/)
 - [Security best practices in IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
+- [Secure access to Amazon SageMaker Studio with AWS SSO and a SAML application](https://aws.amazon.com/blogs/machine-learning/secure-access-to-amazon-sagemaker-studio-with-aws-sso-and-a-saml-application/)
+- [Launch Amazon SageMaker Studio from external applications using presigned URLs](https://aws.amazon.com/blogs/machine-learning/launch-amazon-sagemaker-studio-from-external-applications-using-presigned-urls/)
+- [Mitigate data leakage through the use of AppStream 2.0 and end-to-end auditing](https://aws.amazon.com/blogs/security/mitigate-data-leakage-through-the-use-of-appstream-2-0-and-end-to-end-auditing/)
+- [Understanding Amazon SageMaker notebook instance networking configurations and advanced routing options](https://aws.amazon.com/blogs/machine-learning/understanding-amazon-sagemaker-notebook-instance-networking-configurations-and-advanced-routing-options/)
+- [Building secure Amazon SageMaker access URLs with AWS Service Catalog](https://aws.amazon.com/blogs/mt/building-secure-amazon-sagemaker-access-urls-with-aws-service-catalog/)
+- [Securing Amazon SageMaker Studio connectivity using a private VPC](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-connectivity-using-a-private-vpc/)
+- [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/)
+
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0
