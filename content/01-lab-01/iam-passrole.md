@@ -52,7 +52,7 @@ To summarize: In order for a role to be passed to a service, three pre-requisite
 2. The role being passed is configured to trust the service principal of the service you're trying to pass it to. e.g. a role that trusts only Lambda cannot be passed to Amazon EC2, and a role that is only configured for assumption with saml cannot be passed to Amazon Redshift
 3. The role being passed is in the same AWS account as the principal attempting to pass it
 
-![](../design/iam-passrole-explained.drawio.svg)
+![](../../static/design/iam-passrole-explained.drawio.svg)
 
 In SageMaker context you normally attach `iam:PassRole` permission to the SageMaker execution role. The SageMaker execution role can pass specific roles with specific permissions to SageMaker processing and training jobs, pipelines, inference endpoints (`sagemaker.amazonaws.com` service), and other used services, for example to `lambda.amazonaws.com`.
 

@@ -183,7 +183,7 @@ Resources:
             Action:
               - iam:PassRole
             Resource: # Use here the user profile execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Effect: Allow
             Condition:
               StringEquals:
@@ -240,7 +240,7 @@ Resources:
             Effect: Allow
             Action: iam:PassRole
             Resource: # Use here your model execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -248,7 +248,7 @@ Resources:
             Effect: Allow
             Action: iam:PassRole
             Resource: # Use here your SageMaker job execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -385,7 +385,7 @@ Resources:
             Effect: Allow
             Action: iam:PassRole
             Resource: # Use here your model execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -393,7 +393,7 @@ Resources:
             Effect: Allow
             Action: iam:PassRole
             Resource: # Use here your SageMaker job execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -402,7 +402,7 @@ Resources:
             Action:
               - iam:PassRole
             Resource: # Use here your SageMaker Model Monitor execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -410,7 +410,7 @@ Resources:
             Effect: Allow
             Action: iam:PassRole
             Resource: # Use here your SageMaker Pipeline execution role ARN
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*SageMaker*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*StudioRole*'
             Condition:
               StringEquals:
                 iam:PassedToService: sagemaker.amazonaws.com
@@ -627,7 +627,6 @@ Resources:
               - 'sagemaker:AddTags'
               - 'sagemaker:ListTags'
             Resource: !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:user-profile/*/*'
-
 
   StudioRoleDefault:
     Type: 'AWS::IAM::Role'

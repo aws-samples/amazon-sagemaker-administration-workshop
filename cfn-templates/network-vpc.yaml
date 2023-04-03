@@ -443,6 +443,8 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
+        - Key: Name
+          Value: vpc-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -459,6 +461,8 @@ Resources:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
+        - Key: Name
+          Value: igw-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -480,6 +484,8 @@ Resources:
       CidrBlock: !Ref 'PrivateSubnet1ACIDR'
       AvailabilityZone: !Select ['0', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: private-sn-1a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -493,6 +499,8 @@ Resources:
       CidrBlock: !Ref 'PrivateSubnet2ACIDR'
       AvailabilityZone: !Select ['1', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: private-sn-2a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -506,6 +514,8 @@ Resources:
       CidrBlock: !Ref 'PrivateSubnet3ACIDR'
       AvailabilityZone: !Select ['2', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: private-sn-3a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -518,6 +528,8 @@ Resources:
       CidrBlock: !Ref 'PublicSubnet1CIDR'
       AvailabilityZone: !Select ['0', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: public-sn-1-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -529,6 +541,8 @@ Resources:
       CidrBlock: !Ref 'PublicSubnet2CIDR'
       AvailabilityZone: !Select ['1', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: public-sn-2-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -540,6 +554,8 @@ Resources:
       CidrBlock: !Ref 'PublicSubnet3CIDR'
       AvailabilityZone: !Select ['2', !Ref 'AvailabilityZones']
       Tags:
+        - Key: Name
+          Value: public-sn-3-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -550,6 +566,8 @@ Resources:
     Properties:
       VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
       Tags:
+        - Key: Name
+          Value: private-rtb-1a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -574,6 +592,8 @@ Resources:
     Properties:
       VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
       Tags:
+        - Key: Name
+          Value: private-rtb-2a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -598,6 +618,8 @@ Resources:
     Properties:
       VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
       Tags:
+        - Key: Name
+          Value: private-rtb-3a-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -623,6 +645,8 @@ Resources:
     Properties:
       VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
       Tags:
+        - Key: Name
+          Value: public-rtb-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -695,6 +719,8 @@ Resources:
       AllocationId: !GetAtt 'NAT1EIP.AllocationId'
       SubnetId: !Ref 'PublicSubnet1'
       Tags:
+        - Key: Name
+          Value: nat-gw-1-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -706,6 +732,8 @@ Resources:
       AllocationId: !GetAtt 'NAT2EIP.AllocationId'
       SubnetId: !Ref 'PublicSubnet2'
       Tags:
+        - Key: Name
+          Value: nat-gw-2-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -717,6 +745,8 @@ Resources:
       AllocationId: !GetAtt 'NAT3EIP.AllocationId'
       SubnetId: !Ref 'PublicSubnet3'
       Tags:
+        - Key: Name
+          Value: nat-gw-3-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -764,6 +794,8 @@ Resources:
           IpProtocol: '-1'
           CidrIp: 0.0.0.0/0
       Tags:
+        - Key: Name
+          Value: sg-vpce-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -853,6 +885,8 @@ Resources:
       GroupDescription: 'Security Group for SageMaker Studio and all SageMaker workloads'
       VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
       Tags:
+        - Key: Name
+          Value: sg-sm-sagemaker-admin-workshop
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
@@ -865,25 +899,6 @@ Resources:
       SourceSecurityGroupId: !Ref SageMakerSecurityGroup
       GroupId: !Ref SageMakerSecurityGroup
       
-  SharedServicesVPCEndpointSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Allow HTTP ingress for shared services VPC Endpoint
-      VpcId: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
-      SecurityGroupIngress:
-        - Description: Ingress TCP 80 from SageMaker security group
-          IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
-      SecurityGroupEgress:
-        - Description: All traffic is allowed outbound
-          IpProtocol: '-1'
-          CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: project
-          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
-
   # ******************************************************************************
   # VPC endpoints
   # ******************************************************************************

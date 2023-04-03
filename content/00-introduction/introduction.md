@@ -5,12 +5,13 @@ Check prerequisites for your environment and follow the instructions in one of t
 To complete the workshop you need the following:
 - AWS Account and **Adminstrator** or **PowerUser** access to it.
 - [AWS CLI](https://aws.amazon.com/cli/). If you do not have it, see [Installing, updating, and uninstalling the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html). 
+- Optionally you can run use [AWS Cloud9](https://aws.amazon.com/cloud9/) environment and run all terminal commands in your Cloud9 terminal.
 
 ### AWS Account
 You can run this workshop in own account or use a temporary account provisioned by the instructor.
 
 ### Clone the workshop
-Clone the workshop [GitHub repository](https://github.com/aws-samples/amazon-sagemaker-administration-workshop) to your local development environment:
+Clone the workshop [GitHub repository](https://github.com/aws-samples/amazon-sagemaker-administration-workshop) to your local or Cloud9 development environment:
 ```sh
 git clone https://github.com/aws-samples/amazon-sagemaker-administration-workshop.git
 cd amazon-sagemaker-administration-workshop

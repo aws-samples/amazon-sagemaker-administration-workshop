@@ -15,8 +15,62 @@ aws cloudformation deploy \
     --stack-name sagemaker-admin-workshop-iam \
     --capabilities CAPABILITY_NAMED_IAM 
 
-
 aws cloudformation describe-stacks \
     --stack-name sagemaker-admin-workshop-iam  \
+    --output table \
+    --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
+
+
+export DS_ROLE_ARN=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-iam  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='StudioRoleDataScienceArn'].OutputValue")
+
+export MLOPS_ROLE_ARN=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-iam  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='StudioRoleMLOpsArn'].OutputValue")
+
+export FLOWLOGS_ROLE_ARN=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-iam  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='VPCFlowLogsRoleArn'].OutputValue")
+
+# network-vpc.yaml
+aws cloudformation deploy \
+    --template-file cfn-templates/network-vpc.yaml \
+    --stack-name sagemaker-admin-workshop-vpc \
+    --parameter-overrides \
+    AvailabilityZones=${AWS_DEFAULT_REGION}a\,${AWS_DEFAULT_REGION}b \
+    NumberOfAZs=2 \
+    VPCCIDR=192.168.0.0/16  \
+    PrivateSubnet1ACIDR=192.168.0.0/20 \
+    PrivateSubnet2ACIDR=192.168.16.0/20 \
+    CreateVPCFlowLogsToCloudWatch=YES \
+    VPCFlowLogsRoleArn=$FLOWLOGS_ROLE_ARN
+
+aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output table \
+    --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
+
+export VPCE_KMS_ID=$(
+aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='VPCEndpointKMSId'].OutputValue"
+)
+
+# kms-keys.yaml
+aws cloudformation deploy \
+    --template-file cfn-templates/kms-keys.yaml \
+    --stack-name sagemaker-admin-workshop-kms \
+    --parameter-overrides \
+    StudioRoleDataScienceArn=$DS_ROLE_ARN \
+    StudioRoleMLOpsArn=$MLOPS_ROLE_ARN \
+    VPCEndpointKMSId=$VPCE_KMS_ID
+
+aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-kms  \
     --output table \
     --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
