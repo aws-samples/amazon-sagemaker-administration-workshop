@@ -11,7 +11,7 @@ Working with hands-on examples, you will learn about the recommended design prin
 - [Data and resource isolation using attribute-based access control (ABAC) and role-based access control (RBAC)](content/02-lab-02/lab-02.md)
 - [Governance, monitoring, and security controls](content/03-lab-03/lab-03.md)
 
-## Getting started
+## Getting started
 Follow the instructions in the [introduction](content/00-introduction/introduction.md) section.
 
 ## Infrastructure as Code considerations
@@ -32,7 +32,7 @@ Follow the instructions in in the [Clean up](content/900-clean-up/clean-up.md) s
 ## Resources
 This is a collection of documentation, blog posts, and code repository links for Amazon SageMaker administration and security topics.
 
-### Whitepapers and documentation
+### Whitepapers and documentation
 - [SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
 - [Infrastructure Security in Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html)
 

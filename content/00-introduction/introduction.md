@@ -1,7 +1,7 @@
-# Introduction
+# Introduction
 Check prerequisites for your environment and follow the instructions in one of the sections corresponding to your use case.
 
-## Prerequisites
+## Prerequisites
 To complete the workshop you need the following:
 - AWS Account and **Adminstrator** or **PowerUser** access to it.
 - [AWS CLI](https://aws.amazon.com/cli/). If you do not have it, see [Installing, updating, and uninstalling the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html). 

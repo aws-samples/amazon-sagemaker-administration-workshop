@@ -11,7 +11,7 @@ In this lab you're going to do:
 - Experiment with network controls
 - Experiment with IAM and IAM Identity Center authentication modes
 
-## Overview of SageMaker domain, user profiles, and execution roles
+## Overview of SageMaker domain, user profiles, and execution roles
 
 ### Domain
 An [SageMaker domain](https://docs.aws.amazon.com/sagemaker/latest/dg/sm-domain.html) consists of an associated Amazon Elastic File System (Amazon EFS) volume; a list of authorized users; and a variety of security, application, policy, and Amazon Virtual Private Cloud (Amazon VPC) configurations.
@@ -285,7 +285,7 @@ Follow the instructions in [Onboard to Amazon SageMaker Domain Using IAM](https:
     - _Encryption key_: Choose the AWS KMS key `sagemaker-admin-workshop-<REGION>-<ACCOUNT-ID>-kms-s3` you provisioned in the previous step
     - Choose _Disable cell output sharing_
 
-#### Amazon SageMaker Canvas settings
+#### Amazon SageMaker Canvas settings
 Disable all configurations. If you keep Canvas configuration enabled, SageMaker adds `AmazonSageMakerCanvasFullAccess` and `AmazonSageMakerCanvasAIServiceAccess` managed policies to the default SageMaker execution role. At this point we don't want to attach any other policies to this role.
 
 Wait until the domain goes into `InService` status:
@@ -351,7 +351,7 @@ Repeat the same steps to create one more user profile for an MLOps user. This us
 
 Wait until SageMaker finishes creating the user profile.
 
-## Step 6: sign in to Studio
+## Step 6: sign in to Studio
 After your created the domain and added the user profiles to it, you can sign in to Studio.
 
 Users can sign in to Studio using the following ways:
