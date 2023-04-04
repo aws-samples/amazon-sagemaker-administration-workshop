@@ -6,6 +6,9 @@ IAM conditions
 
 SageMaker [conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
 
+## Monitoring
+
+[Source identity](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
 ## Security controls
 

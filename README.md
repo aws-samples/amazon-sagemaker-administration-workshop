@@ -29,6 +29,10 @@ Follow the instructions in in the [Clean up](content/900-clean-up/clean-up.md) s
 
 💡 You don't need to perform a clean-up if you run an AWS-instructor led workshop.
 
+## Dataset
+This workshop uses the [direct marketing dataset](https://archive.ics.uci.edu/ml/datasets/bank+marketing) from UCI's ML Repository:
+> [Moro et al., 2014] S. Moro, P. Cortez and P. Rita. A Data-Driven Approach to Predict the Success of Bank Telemarketing. Decision Support Systems, Elsevier, 62:22-31, June 2014
+
 ## Resources
 This is a collection of documentation, blog posts, and code repository links for Amazon SageMaker administration and security topics.
 

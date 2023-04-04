@@ -146,8 +146,6 @@ Each used VPC endpoint injects an ENI per Availability Zone configured. For exam
 
 For more details on VPC network planning and configuration, refer to the [Network management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html) in the SageMaker Studio Administration Best Practices.
 
-You can implement multi-layer network traffic control and sophisticated firewall rules by using [AWS Network Firewall](https://aws.amazon.com/network-firewall/). Refer to [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/) blog post for examples.
-
 ### Provision a VPC
 Use the provided CloudFormation [template](../../cfn-templates/network-vpc.yaml) to provision a new VPC or use an existing VPC in your AWS account.
 
@@ -542,15 +540,15 @@ Each user signs in to their Studio environment via a presigned URL from an AWS I
 TBD
 
 ## Step 7: control user permissions with IAM identity-based policies
-In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the execution roles.
+In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the IAM execution roles.
 
-The recommended practice is to define relevant roles and applications involved in your ML lifecycle and assign ownership. You define the required AWS permissions based on role and application activities and resource access they need.
+The recommended practice is to define relevant roles and applications involved in your ML lifecycle and assign ownership. You define the required AWS permissions based on role, application activities, and resource access each role needs.
 
-For example, if you have a team of data scientists and a team of MLOps engineers, you can provision two IAM roles, a Data Science role and a MLOps role. These roles have different permissions based on actions and data access each role needs.
+For example, if you have a team of data scientists and a team of MLOps engineers, you can provision two IAM roles, a Data Science role and a MLOps role. These roles have different permissions based on actions and data access each role needs. You assign the Data Science role to the user profiles for the data science team and the MLOps role to the profiles for the MLOps team. For user profiles we recommend to maintain one-to-one relationship to a physical user.
 
-A good starting point to design IAM roles is the [SageMaker role manager](https://docs.aws.amazon.com/sagemaker/latest/dg/role-manager.html). Using the role manager, you can generate IAM policies, including network perimeter conditions and finalize them with your specific requirements. The SageMaker Studio Administration Best Practices contains a [list of sample IAM policies](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html) for user roles such as ML admin, data scientist, and application execution policy. 
+A good starting point to design IAM roles is the [SageMaker role manager](https://docs.aws.amazon.com/sagemaker/latest/dg/role-manager.html). Using the role manager, you can generate IAM policies, including network perimeter conditions and finalize them with your specific requirements. The SageMaker Studio Administration Best Practices whitepaper contains a [list of sample IAM policies](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html) for user roles such as ML admin, data scientist, and application execution policy. 
 
-Another type of IAM roles are execution service roles. SageMaker launches jobs such as training, processing, and batch transforms or pipelines on a user's behalf. The user _passes_ the designated execution role to the SageMaker service. To be able to pass an execution role, the principal must have `iam:PassRole` permission. For example, both DataScience and MLOps roles you provisioned in the IAM stack have `PassRole` permissions:
+Another type of IAM roles are execution service roles. SageMaker launches jobs such as training, processing, batch transforms, or pipelines on a user's behalf. The user _passes_ the designated execution role to the SageMaker service. To be able to pass an execution role, the user execution role must have `iam:PassRole` permission. For example, both DataScience and MLOps roles you provisioned in the IAM stack have `PassRole` permissions:
 ```json
 {
     "Condition": {
@@ -560,45 +558,86 @@ Another type of IAM roles are execution service roles. SageMaker launches jobs s
     },
     "Action": "iam:PassRole",
     "Resource": [
-        "arn:aws:iam::949335012047:role/*StudioRole*"
+        "arn:aws:iam::<ACCOUNT-ID>:role/*StudioRole*"
     ],
     "Effect": "Allow",
     "Sid": "PassModelExecutionRole"
 }
 ```
-In this policy statement the user can pass any role within the account with `StudioRole` as a part of the role name. In a real-world IAM policy you need to specify what exactly IAM role the user is allowed to pass. 
+In this policy statement the user can pass any role within the specified account with `StudioRole` as a part of the role name. In a real-world IAM policy you need to specify what exactly IAM role the user is allowed to pass. 
 
 For more details refer to the document on [IAM PassRole](./iam-passrole.md).
 
 ### Experiment with user permissions in a Studio notebook
 Now you move to Studio to do some experimentation in a notebook.
-Launch Studio via the Data Scientist user profile your created before.
+Launch Studio via the _Data Scientist_ user profile your created before.
 
-To use the provided notebooks you must clone the source code repository into your Studio environment.
+#### Upload the experimentation notebook to the Studio
+Remember, you don't have internet connectivity in your Studio environment. You cannot clone the workshop source code repository to the Studio EFS because access to GitHub requires a public internet connection. 
 
-After you open Studio select **File** in the top menu, then **New**, then **Terminal**:
+You can manually upload the provided `lab-01` notebook to the Studio EFS from the location where you cloned the workshop code in the [preparation](../00-introduction/introduction.md) step.
 
-![](/static/img/studio-system-terminal-via-menu.png)
+After you open Studio select **File Browser** icon from the left pane and then **Upload Files** from the action pane:
 
-Run the following command in the terminal:
-```
-git clone https://github.com/aws-samples/amazon-sagemaker-administration-workshop.git
-```
+![](/static/img/upload-local-file-to-studio.png)
 
-The code repository will be downloaded and saved in your home directory in Studio.
+Open the local workshop folder where you cloned the code, then open `notebooks` folder. Upload the `01-lab-01.ipynb` notebook to the Studio.
 
 #### Open the notebook
-Navigate to the folder `amazon-sagemaker-administration-workshop` in the Studio file browser. Open the `notebooks` folder and open the `01-lab-01.ipynb` notebook. Select the `Data Science` kernel and follow the instructions.
+Navigate to the Studio File Browser and then open the `01-lab-01.ipynb` notebook. Select the `Data Science` kernel and follow the instructions.
 
-After you played with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
+After you finished playing with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
 
 ## Step 8: control network traffic for Studio notebooks
+This section shows how to deal with network connectivity and to control your VPC traffic with common AWS network controls.
 
-### Internet connectivity
-- internet-free environment
-- add a NAT gateway
+### Internet-free environment
+At the moment, your domain doesn't have public internet connectivity. All traffic to AWS services goes via the provisioned VPC endpoints. If you don't have a VPC endpoint for a specific service, you cannot access it from the Studio. For example, if you try to run `!curl checkip.amazonaws.com` from the Studio notebook, this call will timeout:
+
+![](../../static/img/timeout-no-internet-connectivity.png)
+
+The same situation if you try to install a Python package with `pip`:
 
 ![](../../static/img/pip-install-no-internet-connectivity.png)
+
+If you check the VPC resource map in the AWS Console, there is no internet route in the subnets you use for the domain:
+
+![](../../static/img/vpc-routing-map.png)
+
+The subnets have only local route, S3 VPC gateway endpoint, and a set of VPC interface endpoints to connect to AWS services via the [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html).
+
+The internet-free environment is often a deliberate choice for creating isolated ML environments, data clean rooms, and sandbox environment. The traffic never leaves your private network and you can control every aspect of ingress or egress.
+
+#### Host private packages
+If you need to have access to Python packages in your internet-free environment, there are common options to run a private installation or mirror of Python packages:
+- private PyPi server running on EC2 instances - [example](https://aws.amazon.com/blogs/machine-learning/hosting-a-private-pypi-server-for-amazon-sagemaker-studio-notebooks-in-a-vpc/)
+- private PyPi mirror running on ECS or Fargate - [example](https://github.com/aws-samples/secure-data-science-reference-architecture#private-network-per-data-science-environment) and [workshop](https://sagemaker-workshop.com/security_for_sysops/best_practice/best_practice_lab.html)
+- use [AWS CodeArtifact](https://aws.amazon.com/codeartifact/) to host PyPi - [example](https://aws.amazon.com/blogs/machine-learning/private-package-installation-in-amazon-sagemaker-running-in-internet-free-mode/)
+- use S3 to host custom channels for Conda repository-  [example](https://aws.amazon.com/blogs/machine-learning/private-package-installation-in-amazon-sagemaker-running-in-internet-free-mode/)
+
+### Add a NAT gateway
+Let's add a public internet connectivity to the Studio by adding a [NAT gateway](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html).
+
+You can add a NAT gateway to your VPC manually by completing the following tasks:
+- add an [Internet gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html) to the VPC
+- add at least one public subnet with a route to the Internet gateway
+- add at least one NAT gateway endpoint per subnet to the public subnet
+- associate an elastic IP address with the NAT gateway
+- add a route to the NAT gateway endpoint to the private subnet route table
+
+Alternatively you can deploy the provided CloudFormation [template](../../cfn-templates/network-natgw.yaml) to add a NAT gateway to your VPC. 
+
+Run the following command in the local terminal:
+```sh
+
+```
+
+After the deployment completed, open Studio and check that you have internet connectivity in the notebook.
+
+### Control traffic with AWS Network Firewall
+Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html)- a managed network firewall and IPS for your VPC.
+
+For a working solution in a SageMaker context and more details refer to the blog post [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/).
 
 ### VPC endpoints and endpoint policies
 - using VPC endpoints and endpoints policies
@@ -650,7 +689,14 @@ To use a VPC endpoint with SageMaker Studio, your endpoint policy must allow the
 - VPC flow logs
 
 ## Conclusion
-
+In this lab you learned how to apply the network security and compliance approaches and best practices such as authentication, authorization, permission segregation, VPC, and network isolation as a consistent set of Amazon security features to Amazon SageMaker workloads and Amazon SageMaker Studio specifically. 
+ 
+You learned the following recommended practices for domain setup:
+- Use a [private VPC](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-getting-started.html) with subnets, [NACLs](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html) and [security groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) for locking down the Studio environment and SageMaker workloads.
+- Use [VPC endpoints](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html) and [VPC PrivateLink](https://docs.aws.amazon.com/vpc/latest/userguide/endpoint-service.html) to control access to resources in your VPC and to AWS services.
+- Enable [network isolation](https://docs.aws.amazon.com/vpc/index.html) to prevent SageMaker jobs from making any outbound network calls, even to AWS services.
+- Use Studio [user profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) and SageMaker execution [roles](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) to differentiate access to resources and data for different user roles and applications.
+- Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
 
 ## Additional resources
 The following resources provide additional details and reference for SageMaker network security, IAM roles, and user management.
@@ -672,6 +718,8 @@ The following resources provide additional details and reference for SageMaker n
 - [Building secure Amazon SageMaker access URLs with AWS Service Catalog](https://aws.amazon.com/blogs/mt/building-secure-amazon-sagemaker-access-urls-with-aws-service-catalog/)
 - [Securing Amazon SageMaker Studio connectivity using a private VPC](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-connectivity-using-a-private-vpc/)
 - [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/)
+- [Private package installation in Amazon SageMaker running in internet-free mode](https://aws.amazon.com/blogs/machine-learning/private-package-installation-in-amazon-sagemaker-running-in-internet-free-mode/)
+- [Hosting a private PyPI server for Amazon SageMaker Studio notebooks in a VPC](https://aws.amazon.com/blogs/machine-learning/hosting-a-private-pypi-server-for-amazon-sagemaker-studio-notebooks-in-a-vpc/)
 
 ---
 

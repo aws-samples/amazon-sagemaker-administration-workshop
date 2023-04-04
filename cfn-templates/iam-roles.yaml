@@ -127,6 +127,7 @@ Resources:
           - Sid: AmazonSageMakerReadOnlyAccessKMSPolicy
             Action:
               - kms:DescribeKey
+              - kms:CreateGrant
               - kms:ListAliases
             Resource:
               - !Sub 'arn:aws:kms:*:${AWS::AccountId}:*'
