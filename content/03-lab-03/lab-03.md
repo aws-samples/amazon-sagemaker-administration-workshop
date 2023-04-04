@@ -13,6 +13,8 @@ SageMaker [conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/
 ## Security controls
 
 ### Preventive
+
+#### IAM policies
 We use an IAM role policy which enforce usage of specific security controls. For example, all SageMaker workloads must be created in the VPC with specified security groups and subnets:
 ```json
 {
@@ -66,6 +68,9 @@ We use an Amazon S3 bucket policy explicitly denies all access which is **not or
 S3 VPC endpoint policy allows access only to the specified S3 project buckets with data, models and CI/CD pipeline artifacts, SageMaker-owned S3 bucket and S3 objects which are used for product provisioning.
 
 List of common guardrails in [Permission management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
+
+#### AWS Service Catalog
+Based on pre-defined CloudFormation templates to provision requested resources.
 
 ### Detective
 Logging and monitoring. You can use the following AWS services:

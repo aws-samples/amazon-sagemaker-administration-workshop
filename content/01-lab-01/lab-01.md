@@ -606,10 +606,10 @@ If you check the VPC resource map in the AWS Console, there is no internet route
 
 The subnets have only local route, S3 VPC gateway endpoint, and a set of VPC interface endpoints to connect to AWS services via the [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html).
 
-The internet-free environment is often a deliberate choice for creating isolated ML environments, data clean rooms, and sandbox environment. The traffic never leaves your private network and you can control every aspect of ingress or egress.
+The internet-free environment is often a deliberate choice for creating isolated ML environments, data clean rooms, and sandbox environments. The traffic never leaves your private network and you can control every aspect of ingress or egress.
 
 #### Host private packages
-If you need to have access to Python packages in your internet-free environment, there are common options to run a private installation or mirror of Python packages:
+Often you need to access to Python packages in your internet-free environment. There are common options to run a private installation or mirror of Python packages:
 - private PyPi server running on EC2 instances - [example](https://aws.amazon.com/blogs/machine-learning/hosting-a-private-pypi-server-for-amazon-sagemaker-studio-notebooks-in-a-vpc/)
 - private PyPi mirror running on ECS or Fargate - [example](https://github.com/aws-samples/secure-data-science-reference-architecture#private-network-per-data-science-environment) and [workshop](https://sagemaker-workshop.com/security_for_sysops/best_practice/best_practice_lab.html)
 - use [AWS CodeArtifact](https://aws.amazon.com/codeartifact/) to host PyPi - [example](https://aws.amazon.com/blogs/machine-learning/private-package-installation-in-amazon-sagemaker-running-in-internet-free-mode/)
@@ -635,23 +635,28 @@ Run the following command in the local terminal:
 After the deployment completed, open Studio and check that you have internet connectivity in the notebook.
 
 ### Control traffic with AWS Network Firewall
-Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html)- a managed network firewall and IPS for your VPC.
+Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
 
 For a working solution in a SageMaker context and more details refer to the blog post [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/).
 
 ### VPC endpoints and endpoint policies
-- using VPC endpoints and endpoints policies
-    - for domain access
+VPC endpoints are build on [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/concepts.html). This workshop uses VPC endpoints to access all required AWS services via the private network without traversing the public internet and without requiring an internet route in the VPC.
 
-You need to set up a custom DNS with [private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) for the Amazon VPC endpoint so SageMaker Studio can access the SageMaker API using the `api.sagemaker.<Region>.amazonaws.com` endpoint rather than using the VPC endpoint URL.
+You need to set up a custom DNS with [private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) for the VPC endpoint so the Studio can access the SageMaker API using the `api.sagemaker.<Region>.amazonaws.com` endpoint rather than using the VPC endpoint URL. With private DNS you don't need to specify the endpoint URL (e.g. `<VPCE_ID>.api.sagemaker.<Region>.vpce.amazonaws.com`) in SageMaker API and Studio calls.
 
-Enable private DNS hostnames for your VPC endpoints. With private DNS you don't need to specify the endpoint URL (e.g. `<VPCE_ID>.api.sagemaker.<Region>.vpce.amazonaws.com`) in SageMaker API and Studio calls.
+#### VPC endpoint policies
+You implement an additional layer of control by using an endpoint policy for interface or gateway VPC endpoints. The endpoint policy controls which AWS principal can use the VPC endpoint to access the endpoint service.
 
-#### VPC endpoint policy
-You can attach an Amazon VPC endpoint policy to the interface VPC endpoints that you use to connect to SageMaker Studio. The endpoint policy controls access to Studio. You can specify the following:
-- The principal that can perform actions.
+You can specify the following conditions in the endpoint policy:
+- The principal (IAM role, user, account, or service) that can perform actions.
 - The actions that can be performed.
 - The resources on which actions can be performed.
+
+use case 1 - use VPC endpoints to access AWS services and your private resources from the _Studio VPC_ (diagram)
+use case 2 - use VPC endpoints to access Studio and SageMaker from the _user VPC_ (diagram)
+
+
+If you use VPC endpoints in the user agent VPC used to access Studio and SageMaker API, you can attach an endpoint policy. The endpoint policy controls access to Studio. 
 
 Examples:  
 All users that have access to the endpoint are allowed to access the user profiles in the SageMaker Studio domain with the specified domain ID. Access to other domains is denied.
@@ -683,7 +688,12 @@ To use a VPC endpoint with SageMaker Studio, your endpoint policy must allow the
 ```
 
 ### Use network configuration in SageMaker jobs
-- specify VPCConfig for SageMaker jobs
+You specify your VPC configuration when you create a SageMaker workload such as processing or training job, a pipeline, or a model by selecting a VPC and specifying subnets and security groups in the corresponding API call. When you specify the subnets and security groups, SageMaker creates elastic network interfaces (ENI) that are associated with your security groups in one of the subnets. Network interfaces allow your model containers to connect to resources in your VPC.
+
+By using the VPC configuration you can control all data ingress or egress for SageMaker jobs with your own security controls.
+
+
+- Examples how to specify VPCConfig for SageMaker jobs
 
 ### Network traffic monitoring
 - VPC flow logs
