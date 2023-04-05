@@ -208,6 +208,11 @@ Resources:
             Resource:
               - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
             Effect: Allow
+          - Sid: SSMReadPermission 
+            Action:
+              - ssm:GetParameter*
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sagemaker-admin-workshop-${AWS::Region}-${AWS::AccountId}*'
+            Effect: Allow 
             Condition:
               ForAnyValue:StringEquals:
                 aws:TagKeys:

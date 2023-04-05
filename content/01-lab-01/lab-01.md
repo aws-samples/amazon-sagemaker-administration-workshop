@@ -640,25 +640,85 @@ Depending on your security, compliance, and governance rules, you may not need t
 For a working solution in a SageMaker context and more details refer to the blog post [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/).
 
 ### VPC endpoints and endpoint policies
-VPC endpoints are build on [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/concepts.html). This workshop uses VPC endpoints to access all required AWS services via the private network without traversing the public internet and without requiring an internet route in the VPC.
+VPC endpoints are build on [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/concepts.html). The VPC endpoints enable you to connect your VPC to services as if they were in your VPC. This workshop uses VPC endpoints to access all required AWS services via the private network without traversing the public internet and without requiring an internet route in the VPC.
 
-You need to set up a custom DNS with [private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) for the VPC endpoint so the Studio can access the SageMaker API using the `api.sagemaker.<Region>.amazonaws.com` endpoint rather than using the VPC endpoint URL. With private DNS you don't need to specify the endpoint URL (e.g. `<VPCE_ID>.api.sagemaker.<Region>.vpce.amazonaws.com`) in SageMaker API and Studio calls.
+You can use the VPC endpoints and VPC polices at different places in your network topology:
+
+![](../../static/design/vpce-policies.drawio.svg)
+
+The diagram above represents three possible use case for VPC endpoints:
+1. Use VPC endpoints in the user VPC to control access to the Studio and SageMaker API
+2. Use VPC endpoints in the Studio VPC to control access to the AWS services. This workshop shows this use case.
+3. Use VPC endpoints in the Studio VPC to control access to your or 3rd party private services, located in a different AWS Account and a different VPC
 
 #### VPC endpoint policies
-You implement an additional layer of control by using an endpoint policy for interface or gateway VPC endpoints. The endpoint policy controls which AWS principal can use the VPC endpoint to access the endpoint service.
+You implement an additional layer of control by using an endpoint policy for interface or gateway VPC endpoints. The endpoint policy controls which _AWS principal_ can use the VPC endpoint to access the _endpoint service_.
 
 You can specify the following conditions in the endpoint policy:
 - The principal (IAM role, user, account, or service) that can perform actions.
 - The actions that can be performed.
 - The resources on which actions can be performed.
 
-use case 1 - use VPC endpoints to access AWS services and your private resources from the _Studio VPC_ (diagram)
-use case 2 - use VPC endpoints to access Studio and SageMaker from the _user VPC_ (diagram)
+❗ Not all endpoint services support endpoint policies. If a service does not support endpoint policies, the endpoint allows full access to the service. You can run the following AWS CLI command to list AWS services which do support VPC endpoints:
+```sh
+aws ec2 describe-vpc-endpoint-services \
+  --region <AWS-REGION> \
+  --query 'ServiceDetails[?VpcEndpointPolicySupported==`true`].ServiceName'
+```
 
+##### Use VPC endpoints in the Studio VPC to control access to the AWS services
+Let's use the VPC endpoint policy to add an additional layer of control on who can use what AWS service.
 
+You are going to allow to use AWS Systems Manager (SSM) [parameter store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) for the MLOPs role only. All other roles must be denied of access to the SSM parameter store from the Studio notebooks.
+
+Do the following steps:
+
+1. Sign in to the Studio via the _DataScience_ profile. Run the `ssm.get_parameter()` statement in the code cell in the notebook in the corresponding section. The call must succeed:
+
+![](../../static/img/get-parameter-success.png)
+
+2. Now change the VPC policy for the SSM VPC endpoint to the following one:
+
+```json
+{
+    "Statement": [
+        {
+            "Action": [
+                "ssm:*"
+            ],
+            "Principal": "*",
+            "Resource": [
+                "*"
+            ],
+            "Effect": "Deny",
+            "Condition": {
+                "ArnNotEquals": {
+                    "aws:PrincipalArn": "<MLOps execution role ARN>"
+                }
+            }
+        }
+    ]
+}
+```
+
+This policy denies access to the SSM API for all principals except the the MLOps execution role.
+
+3. If you run the same statement in the notebook, you get the `AccessDeniedException` in the notebook because of the explicit deny in the VPC endpoint policy:
+
+![](../../static/img/get-parameter-access-denied.png)
+
+There might be a delay up to several minutes until the VPC endpoint policy becomes effective. Re-run the cell until you have the exception.
+
+4. Close Studio and sign in via the _MLOps_ profile. Run the same statement. In this case the call is successful because the VPC endpoint policy allows the MLOps execution role to access the SSM API.
+
+5. Remove the VPC endpoint policy.
+
+For more VPC endpoint examples refer to the [Building A Data Perimeter on AWS](https://docs.aws.amazon.com/whitepapers/latest/building-a-data-perimeter-on-aws/appendix-2-vpc-endpoint-policy-examples.html) whitepaper.
+
+##### Use VPC endpoints in the user VPC to control access to the Studio and SageMaker API
 If you use VPC endpoints in the user agent VPC used to access Studio and SageMaker API, you can attach an endpoint policy. The endpoint policy controls access to Studio. 
 
-Examples:  
+Consider the following examples:  
 All users that have access to the endpoint are allowed to access the user profiles in the SageMaker Studio domain with the specified domain ID. Access to other domains is denied.
 ```json
 {
@@ -687,11 +747,12 @@ To use a VPC endpoint with SageMaker Studio, your endpoint policy must allow the
 }
 ```
 
+You need to set up a custom DNS with [private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) for the VPC endpoint so the Studio can access the SageMaker API using the `api.sagemaker.<Region>.amazonaws.com` endpoint rather than using the VPC endpoint URL. With private DNS you don't need to specify the endpoint URL (e.g. `<VPCE_ID>.api.sagemaker.<Region>.vpce.amazonaws.com`) in SageMaker API and Studio calls.
+
 ### Use network configuration in SageMaker jobs
 You specify your VPC configuration when you create a SageMaker workload such as processing or training job, a pipeline, or a model by selecting a VPC and specifying subnets and security groups in the corresponding API call. When you specify the subnets and security groups, SageMaker creates elastic network interfaces (ENI) that are associated with your security groups in one of the subnets. Network interfaces allow your model containers to connect to resources in your VPC.
 
 By using the VPC configuration you can control all data ingress or egress for SageMaker jobs with your own security controls.
-
 
 - Examples how to specify VPCConfig for SageMaker jobs
 
