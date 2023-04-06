@@ -9,9 +9,13 @@ In this lab you're going to do:
 - Create AWS KMS keys for data encryption
 - Setup Amazon VPC and a network perimeter
 - Onboard to Amazon SageMaker domain
-- Create and configure user profiles
-- Experiment with network controls
 - Experiment with IAM and IAM Identity Center authentication modes
+- Create and configure user profiles
+- Control access to Studio with presigned domain URLs
+- Experiment with network controls
+- Use VPC endpoints and VPC endpoint policies to control egress and service access
+- Use network isolation in SageMaker jobs
+- Log IP traffic in your VPC using [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html)
 
 ## Overview of SageMaker domain, user profiles, and execution roles
 
@@ -383,6 +387,11 @@ To implement Studio access restrictions, you must use [IAM policy conditions](ht
 
 For IAM policy examples refer to [Permission management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html) in the SageMaker Studio Administration Best Practices whitepaper.
 
+To summarize, you can enforce access controls using the following IAM condition keys:
+- `aws:sourceVpc`: user agent's VPC validation
+- `aws:sourceVpce`: user agent's VPC endpoint validation 
+- `aws:sourceIp`: user agent's IP validation
+
 You're going to experiment with Studio access management in the next section.
 
 #### VPC endpoint considerations for Studio and SageMaker API access
@@ -409,7 +418,9 @@ You'll be redirected to the Studio page. The first start takes about 5 minutes b
 
 Let's restrict the location of user to the VPC you created in the previous step.
 
-Add the following inline policy to the IAM role you use to sign in to the AWS console. Replace the `<YOUR-VPC-ID>` with the VPC ID from the VPC stack output. Refer to [instructions how to add IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html) in the AWS IAM Developer Guide.
+**Add the deny-only inline policy to the IAM role you use to sign in to the AWS console**. It's important that you add this policy to your IAM user role and not to the user profile execution role. The user profile execution role is used by Studio to act on user's behalf when the user signed in the Studio.
+
+Replace the `<YOUR-VPC-ID>` in the policy statement with the VPC ID from the VPC stack output. Refer to [instructions how to add IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html) in the AWS IAM Developer Guide.
 
 ```json
 {
@@ -533,6 +544,26 @@ Copy this url and paste it in a browser. You'll redirected to the Studio.
 Congratulations, you successfully tested the Studio access control!
 
 ❗ Remove the inline IAM policy for `sagemaker:CreatePresignedDomainUrl` from your IAM role.
+
+#### Network perimeter for generation and using presigned URLs
+You can use one of IAM condition keys `aws:SourceVpc`, `aws:sourceVpce`, or `aws:SourceIp` to protect the presigned URL against data exfiltration. 
+
+When you enforce a specific network context with IAM policies attached to the role which calls the `CreatePresignedDomainURL` API, the generation and usage of the presigned URL must occur in the same network perimeter.
+
+For example, you can use a [custom SAML backend](https://aws.amazon.com/blogs/machine-learning/secure-access-to-amazon-sagemaker-studio-with-aws-sso-and-a-saml-application/) within a designated VPC, a _VPC A_, to generate a presigned domain URL. Then you pass the generated URL to the user agent which can reside in a different network perimeter, a _VPC B_. The authentication token in the presigned URL contains information about the network context the URL was generated within. You cannot use this URL to sign in to the Studio from the different network.
+
+![](../../static/design/presigned-domain-url-network-perimeter.drawio.svg)
+
+You can model this situation if you use a Cloud9 terminal to generate a presigned URL but use the URL in your local browser. Since the Cloud9 terminal and the local browser reside in different network contexts, you get `Auth token containing insufficient permissions` exception and sign-in fails. 
+
+#### Protect Studio presigned URLs
+While you can restrict access to `CreatePresignedDomainUrl` API to generate a presigned URL and route any traffic via a private network, as soon as a user agent possesses the URL, it can use it to get the unrestricted access to Studio. This is a common threat vector when using [bearer tokens](https://oauth.net/2/bearer-tokens/) and can be mitigated by implementing a Demonstration of Proof of Possession (DPoP) approach, for example, as described in the [OAth 2.0 DPoP](https://oauth.net/2/dpop/) draft.
+
+You can implement a simple mitigation of this threat vector by setting the expiration time for the presigned URL to the minimum value of 3 seconds, and use a private network and encryption in transit for all communications between the user agent and the SageMaker service endpoint.
+
+To implement a more sophisticated presigned URL protection approach, you can use private API and JWT-based implementation as described in [Secure Amazon SageMaker Studio presigned URLs Part 2: Private API with JWT authentication](https://aws.amazon.com/blogs/machine-learning/secure-amazon-sagemaker-studio-presigned-urls-part-2-private-api-with-jwt-authentication/) blog post.
+
+For the majority of the use cases the implementation of DPoP is not justified and having all communications between a user agent and a SageMaker service endpoint within a private network and encrypted would be sufficient. However, it's important to understand all security implication and threat vectors of a chosen Studio access control enforcement.
 
 ### Sign in to Studio from the AWS IAM Identity center
 Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity center portal without the need to go to the console in their AWS account. Your custom profile management backend uses an API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user.
@@ -753,11 +784,70 @@ You need to set up a custom DNS with [private hosted zones](https://docs.aws.ama
 You specify your VPC configuration when you create a SageMaker workload such as processing or training job, a pipeline, or a model by selecting a VPC and specifying subnets and security groups in the corresponding API call. When you specify the subnets and security groups, SageMaker creates elastic network interfaces (ENI) that are associated with your security groups in one of the subnets. Network interfaces allow your model containers to connect to resources in your VPC.
 
 By using the VPC configuration you can control all data ingress or egress for SageMaker jobs with your own security controls.
+The minimum expectations on the security group you use for SageMaker jobs are:
+1. Allow ingress and egress from the same security group (self-referencing rule)
+2. Allow outbound access to S3 
 
-- Examples how to specify VPCConfig for SageMaker jobs
+Training jobs offer the option to [EnableNetworkIsolation](https://docs.aws.amazon.com/sagemaker/latest/dg/mkt-algo-model-internet-free.html) during creation which prevents any outbound network calls from the algorithm container, even to other AWS services such as Amazon S3. No AWS credentials are made available to the container runtime if network isolation is enabled. Network isolation is required for training jobs and models run using resources from AWS Marketplace, where this is available. For training jobs with multiple instances, inter-container network traffic is limited to job specific peers using dedicated per-job security groups managed by the platform by default.
+
+To specify the VPC configuration, network isolation, and encryption, you can use the SageMaker Python SDK class [`NetworkConfig`](https://sagemaker.readthedocs.io/en/stable/api/utility/network.html):
+
+```python
+network_config = NetworkConfig(
+        enable_network_isolation=False, 
+        security_group_ids=<SECURITY-GROUP-IDS>,
+        subnets=<SUBNET-IDS>,
+        encrypt_inter_container_traffic=True)
+```
+
+You use the `NetworkConfig` for creation SageMaker training jobs, for example for the [`Estimator`](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.Estimator) class:
+```python
+xgb = sagemaker.estimator.Estimator(
+    image_uri=container_uri,
+    role=sagemaker_execution_role, 
+    instance_count=2, 
+    instance_type='ml.m5.xlarge',
+    output_path='s3://{}/{}/model-artifacts'.format(default_bucket, prefix),
+    sagemaker_session=sagemaker_session,
+    base_job_name='reorder-classifier',
+    subnets=network_config.subnets,
+    security_group_ids=network_config.security_group_ids,
+    encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
+    enable_network_isolation=network_config.enable_network_isolation,
+    volume_kms_key=ebs_kms_id,
+    output_kms_key=s3_kms_id
+  )
+```
+
+Other SageMaker Python SDK classes for processing, model monitoring, AutoML, and models also support network configuration. Check the individual class specifications for more details:
+- [`Processor`](https://sagemaker.readthedocs.io/en/stable/api/training/processing.html#sagemaker.processing.Processor)
+- [`Model`](https://sagemaker.readthedocs.io/en/stable/api/inference/model.html#model)
+- [`AutoML`](https://sagemaker.readthedocs.io/en/stable/api/training/automl.html#sagemaker.automl.automl.AutoML)
+- [`ModelMonitor`](https://sagemaker.readthedocs.io/en/stable/api/inference/model_monitor.html#sagemaker.model_monitor.model_monitoring.ModelMonitor)
+
+The provided workshop notebook shows a working example of using VPC configuration for a SageMaker processing job.
 
 ### Network traffic monitoring
-- VPC flow logs
+[VPC flow logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) allows you to log IP traffic to and from all network interfaces in your VPC. You can publish the logs to Amazon CloudWatch, Amazon S3, or Amazon Kinesis Data Firehose. As soon as the logs are published, you can implement logs analytics or visualization to understand your traffic and find possible issues with:
+- Too permissive or too restrictive security groups
+- Reachability of the network interfaces
+- Too much traffic on some network interfaces
+
+It's a recommended practice to capture IP traffic with VPC Flow Logs in all your VPC. In a productive environment we recommend to capture all logs in a single log account.
+
+Your created the VPC Flow Logs when you created the VPC in the step 2 of this lab. Navigate to the VPC console in the AWS account check the **Flow logs** configuration: 
+
+![](../../static/img/vpc-flow-logs.png)
+
+You can see, that the logs capture only rejected traffic and are delivered to a designated CloudWatch log group. If you'd like to change any parameters of the VPC Flow Logs, you must delete and re-create the existing log or create a new one.
+
+If you navigate to the VPC Flow Logs CloudWatch log group, you'll see many `NODATA` entries for various ENIs in the VPC. These entries represent that an ENI is actively attached to a VPC endpoint. You can treat this type of entries as a heartbeat. Refer to [Flow log record examples](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-records-examples.html) for description of log entry types.
+
+The experimenting with VPC Flow Logs goes beyond the scope of this workshop, but you can use the provisioned resources and the configured log to learn and understand how to capture, analyse, and manage IP traffic logs.
+
+Congratulations, this is the last step in this lab! 
+
+---
 
 ## Conclusion
 In this lab you learned how to apply the network security and compliance approaches and best practices such as authentication, authorization, permission segregation, VPC, and network isolation as a consistent set of Amazon security features to Amazon SageMaker workloads and Amazon SageMaker Studio specifically. 
@@ -768,6 +858,8 @@ You learned the following recommended practices for domain setup:
 - Enable [network isolation](https://docs.aws.amazon.com/vpc/index.html) to prevent SageMaker jobs from making any outbound network calls, even to AWS services.
 - Use Studio [user profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) and SageMaker execution [roles](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) to differentiate access to resources and data for different user roles and applications.
 - Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
+
+You can move to the [lab 2](../02-lab-02/lab-02.md) which demonstrates how to implement data protection in the context of your ML environment.
 
 ## Additional resources
 The following resources provide additional details and reference for SageMaker network security, IAM roles, and user management.

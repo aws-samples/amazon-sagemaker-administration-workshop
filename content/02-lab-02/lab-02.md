@@ -1,10 +1,16 @@
 
-- Data security 
-- Data and resource isolation with ABAC and RBAC
-- Multidomain
+# Lab 2: Data protection
+This lab shows how to implement auditing, monitoring, and governance guardrails for your ML environments and workloads. The hands-on examples also contain implementation of preventive, detective, and corrective security controls.
 
+---
 
-- start with no S3 access
+## Content
+In this lab you're going to do:
+- Protect data at rest using encryption with AWS KMS
+- Protect data in transit using encryption
+- Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
+- Implement RBAC and ABAC
+- Control access to SageMaker resources by using tags
 
 ## Data encryption
 
@@ -198,6 +204,12 @@ aws sts get-caller-identity
 ![get role](../img/sagemaker-execution-role.png)
 
 All operations are performed under the SageMaker user profile execution role.
+
+## Data protection in SageMaker jobs
+By default, containers access S3 via VPC Endpoints within the Platform VPC without traversing the public network. For more control, the customer may alternately connect the instance to a customer VPC for privately managed egress, and can require this through an [IAM condition key](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html#amazonsagemaker-policy-keys) on a policy attached to the role passed to SageMaker. [VPC mode](https://docs.aws.amazon.com/sagemaker/latest/dg/train-vpc.html) should be chosen when the S3 buckets containing the input/output data have policies restricting their access to specific customer-managed VPC Endpoints. Amazon SageMaker performs download and upload operations against Amazon S3 using your Amazon SageMaker Execution Role in isolation from the training container.
+
+## Control access to SageMaker resources by using tags
+https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy
 
 ## Conclusion
 

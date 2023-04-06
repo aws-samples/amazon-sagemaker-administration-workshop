@@ -1,18 +1,26 @@
+# Lab 3: Monitoring, governance, and security controls
+This lab shows how to implement auditing, monitoring, and governance guardrails for your ML environments and workloads. The hands-on examples contain implementation of preventive, detective, and corrective security controls.
 
-- Governance and security controls
+---
 
-preventive controls
-IAM conditions
+## Content
+In this lab you're going to do:
+- Learn what governance guardrails you can implement for ML workloads
+- Use AWS services [AWS CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html), [Amazon CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html), and [Amazon S3 server access logging](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) to monitor the access to API and application logs
+- Use [Amazon GuardDuty](http://aws.amazon.com/guardduty/) to monitor for malicious and unauthorized activities
+- Use [Amazon Macie](http://aws.amazon.com/macie/) to find and classify personally identifiable information (PII) in the training and inference data
+- Implement preventive security controls with IAM policy conditions
+- Implement detective and corrective security controls with [AWS Config](https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html), [IAM Access Analyzer](https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html), and [AWS Security Hub](https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html).
 
-SageMaker [conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
 
-## Monitoring
+## Logging and monitoring
 
 [Source identity](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
 ## Security controls
 
 ### Preventive
+[SageMaker IAM conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
 
 #### IAM policies
 We use an IAM role policy which enforce usage of specific security controls. For example, all SageMaker workloads must be created in the VPC with specified security groups and subnets:
@@ -180,6 +188,9 @@ You are able to create and run the training job.
 ## Conclusion
 
 ## Additional resources
+- [Logging and monitoring in SageMaker Studio Administration Best Practices whitepaper](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/logging-and-monitoring.html)
+- [Monitoring in AWS Well-Architected Framework Machine Learning Lens](https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/ml-lifecycle-phase-monitoring.html)
+- [SageMaker IAM conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
 
 ---
 
