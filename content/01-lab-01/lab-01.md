@@ -194,7 +194,7 @@ aws cloudformation describe-stacks \
     --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
 ```
 
-You can also store the VPC endpoint ID from the stack output, you need this ID for the KMS stack deployment:
+You can also store the KMS VPC endpoint ID from the stack output, you need this ID for the KMS stack deployment:
 ```sh
 export VPCE_KMS_ID=$(
 aws cloudformation describe-stacks \
@@ -394,7 +394,7 @@ To summarize, you can enforce access controls using the following IAM condition 
 
 You're going to experiment with Studio access management in the next section.
 
-#### VPC endpoint considerations for Studio and SageMaker API access
+#### VPC endpoint considerations for Studio and SageMaker API access
 To be able to control access to Studio and SageMaker API within your network perimeter, you must place a user agent such as EC2 instance, VM, or VPN into a controlled VPC. This VPC must have at least two VPC endpoints for Studio connectivity:
 - VPC endpoint for the Studio
 - VPC endpoint for the SageMaker API
@@ -418,7 +418,8 @@ You'll be redirected to the Studio page. The first start takes about 5 minutes b
 
 Let's restrict the location of user to the VPC you created in the previous step.
 
-**Add the deny-only inline policy to the IAM role you use to sign in to the AWS console**. It's important that you add this policy to your IAM user role and not to the user profile execution role. The user profile execution role is used by Studio to act on user's behalf when the user signed in the Studio.
+#### Add the deny-only inline policy to the IAM role you use to sign in to the AWS console
+It's important that you add this policy to your IAM user role you use in AWS Console and not to the user profile execution role. The user profile execution role is used by Studio to act on user's behalf when the user signed in the Studio.
 
 Replace the `<YOUR-VPC-ID>` in the policy statement with the VPC ID from the VPC stack output. Refer to [instructions how to add IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html) in the AWS IAM Developer Guide.
 
@@ -697,7 +698,7 @@ aws ec2 describe-vpc-endpoint-services \
   --query 'ServiceDetails[?VpcEndpointPolicySupported==`true`].ServiceName'
 ```
 
-##### Use VPC endpoints in the Studio VPC to control access to the AWS services
+##### Use VPC endpoints in the Studio VPC to control access to the AWS services
 Let's use the VPC endpoint policy to add an additional layer of control on who can use what AWS service.
 
 You are going to allow to use AWS Systems Manager (SSM) [parameter store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) for the MLOPs role only. All other roles must be denied of access to the SSM parameter store from the Studio notebooks.
