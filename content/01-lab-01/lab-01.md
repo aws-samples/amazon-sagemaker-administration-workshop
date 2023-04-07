@@ -20,7 +20,9 @@ In this lab you're going to do:
 ## Overview of SageMaker domain, user profiles, and execution roles
 
 ### Domain
-An [SageMaker domain](https://docs.aws.amazon.com/sagemaker/latest/dg/sm-domain.html) consists of an associated Amazon Elastic File System (Amazon EFS) volume; a list of authorized users; and a variety of security, application, policy, and Amazon Virtual Private Cloud (Amazon VPC) configurations.
+A [SageMaker domain](https://docs.aws.amazon.com/sagemaker/latest/dg/sm-domain.html) consists of an associated Amazon Elastic File System (Amazon EFS) volume; a list of authorized users; and a variety of security, application, policy, and Amazon Virtual Private Cloud (Amazon VPC) configurations.
+
+Refer to the [Dive deep into Amazon SageMaker Studio Notebooks architecture](https://aws.amazon.com/blogs/machine-learning/dive-deep-into-amazon-sagemaker-studio-notebook-architecture/) blog post for in-depth overview of SageMaker domain and Studio architecture.
 
 ### User profile
 A [user profile](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) represents a single user within a Domain. It is the main way to reference a user for the purposes of sharing, reporting, and other user-oriented features. This entity is created when a user onboards the Amazon SageMaker Domain.
@@ -172,6 +174,10 @@ export FLOWLOGS_ROLE_ARN=$(aws cloudformation describe-stacks \
 ```
 
 To deploy the VPC stack run the following AWS CLI command in your terminal in the workshop directory. You can use different CIDR to reflect your own environment.
+```sh
+export AWS_DEFAULT_REGION=$(aws configure get region)
+```
+
 ```sh
 aws cloudformation deploy \
     --template-file cfn-templates/network-vpc.yaml \
@@ -499,7 +505,7 @@ aws sagemaker list-domains
 Locate your domain by the name and choose the `DomainId`. Use this domain ID in the following command:
 ```sh
 aws sagemaker create-presigned-domain-url \
-    --domain-id <DOMAIN-ID>
+    --domain-id <DOMAIN-ID> \
     --user-profile-name <USER-PROFILE-NAME>
 ```
 
@@ -870,6 +876,7 @@ The following resources provide additional details and reference for SageMaker n
 - [Amazon SageMaker - Onboard to Domain developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html)
 - [SageMaker Studio Administration Best Practices - Network management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
 - [New ML Governance Tools for Amazon SageMaker – Simplify Access Control and Enhance Transparency Over Your ML Projects](https://aws.amazon.com/blogs/aws/new-ml-governance-tools-for-amazon-sagemaker-simplify-access-control-and-enhance-transparency-over-your-ml-projects/)
+- [Dive deep into Amazon SageMaker Studio Notebooks architecture](https://aws.amazon.com/blogs/machine-learning/dive-deep-into-amazon-sagemaker-studio-notebook-architecture/)
 - [Secure Training and Inference with VPC](https://sagemaker.readthedocs.io/en/v2.101.0/overview.html#secure-training-and-inference-with-vpc)
 - [Access an Amazon SageMaker Studio notebook from a corporate network](https://aws.amazon.com/blogs/machine-learning/access-an-amazon-sagemaker-studio-notebook-from-a-corporate-network/)
 - [Secure Amazon SageMaker Studio presigned URLs (blog series)](https://aws.amazon.com/blogs/machine-learning/secure-amazon-sagemaker-studio-presigned-urls-part-1-foundational-infrastructure/)
