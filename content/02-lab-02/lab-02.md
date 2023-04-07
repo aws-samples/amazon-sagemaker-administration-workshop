@@ -1,6 +1,6 @@
 
 # Lab 2: Data protection
-This lab shows how to implement auditing, monitoring, and governance guardrails for your ML environments and workloads. The hands-on examples also contain implementation of preventive, detective, and corrective security controls.
+This lab shows how to protect data in your ML environment. 
 
 ---
 
@@ -9,8 +9,33 @@ In this lab you're going to do:
 - Protect data at rest using encryption with AWS KMS
 - Protect data in transit using encryption
 - Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
-- Implement RBAC and ABAC
+- Implement RBAC and ABAC for data protection
 - Control access to SageMaker resources by using tags
+
+## Where your data must be protected
+The ML workflow can process, copy, generate, and store a to be protected dataset resulting in multiple persistent or ephemeral data copies. As these copies represent additional threat vectors for data protection, you must be aware of them, monitor them, and implement a corresponding mitigation.
+
+The following table summarizes possible data copies resulted from the ML development process:
+
+Data location | Encryption | Lifetime | Data protection approach
+---|---|---|---
+Memory of the Jupyter notebooks, processing, and training job instances | Always-on memory encryption for [Graviton2](https://aws.amazon.com/ec2/graviton/), Ice Lake, and AMD EPYC based instances | Ephemeral | Use always-on memory encryption for critical data on supporting compute instances, see [Graviton-based instances for model deployment](https://aws.amazon.com/about-aws/whats-new/2022/10/amazon-sagemaker-adds-new-graviton-based-instances-model-deployment/) and [available Studio instance types](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks-available-instance-types.html)
+SageMaker Studio EFS volume | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key, use `KmsKeyId` parameter in SageMaker API
+EBS volumes attached to Studio notebook instances | At rest, both OS and ML data volumes are encrypted by default with an AWS managed key | Ephemeral | Recommended to use a KMS key instead of an AWS managed key, use `KmsKeyId` parameter in SageMaker API
+EBS volumes attached to SageMaker processing, batch transform, and training job containers | At rest, by default with an AWS managed key | Ephemeral | Recommended to use a KMS key instead of an AWS managed key, use `KmsKeyId` parameter in SageMaker API
+Output from processing, training, and batch transform jobs stored in an S3 bucket | At rest, by default with an AWS managed key for S3 | Persistent | Recommended to use a KMS key instead of an AWS managed key, use `S3KmsKeyId` parameter in SageMaker API. Use S3 VPC endpoint policies to prevent write to any unauthorized S3 buckets. Enforce usage of the designated KMS key for `PutObject` S3 operation
+[Data capture](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-capture.html) configurations with SageMaker endpoints and batch transform | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS keys, use `KmsKeyId` in [`DataCaptureConfig`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DataCaptureConfig.html) for encryption on EBS volume attached to the ML instance hosting the endpoint.
+Notebook cell output | No encryption | Ephemeral | Use Studio notebooks [lifecycle configuration scripts](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-lcc.html) to remove cell output periodically using [`jupyter/nbconvert`](https://github.com/jupyter/nbconvert). Start with the example for [auto-shutdown](https://github.com/aws-samples/sagemaker-studio-auto-shutdown-extension)
+Git-committed notebook with cell output | No encryption | Persistent | Use Git [pre-commit hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) to remove cell output, implement automated scanning in Git repositories
+Git-committed datasets | No encryption | Persistent | Implement automated scanning in Git repositories, use pre-commit hooks
+Shared Studio notebooks | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key, use `S3KmsKeyId`. Disable notebook sharing at the domain level
+Another EC2 instance via Studio terminal or a processing or training script | Potentially no encryption | Persistent | Implement network isolation with VPC Security Groups for Studio and block any data transfer to unauthorized EC2 instances
+SageMaker [Feature Store](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html) | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key for offline and online store. Refer to [Security and Access Control](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-security.html) for Feature Store
+Another Amazon S3 bucket | Potentially no encryption | Persistent | Use S3 VPC endpoint policies to prevent write to any unauthorized S3 buckets
+[Amazon Athena](https://docs.aws.amazon.com/athena/latest/ug/what-is.html) query result table | Not encrypted by default | Persistent | Refer to [Data protection in Athena](https://docs.aws.amazon.com/athena/latest/ug/security-data-protection.html) and [Encrypting Athena query results stored in Amazon S3](https://docs.aws.amazon.com/athena/latest/ug/encrypting-query-results-stored-in-s3.html)
+Amazon EMR cluster | as configured | Persistent | Use Amazon EMR encryption approaches. Refer to [Data protection in Amazon EMR](https://docs.aws.amazon.com/emr/latest/ManagementGuide/data-protection.html)
+
+❗ Certain Nitro-based SageMaker instances include local storage, depending on the instance type. Local storage volumes are encrypted using a hardware module on the instance. You can't use a KMS key on an instance type with local storage. For a list of instance types that support local instance storage, see [Instance Store Volumes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#instance-store-volumes).
 
 ## Data encryption
 
@@ -90,6 +115,8 @@ In a real-world environment you should consider the following recommended practi
 - Keep all KMS keys in a separate hardened and controlled account with only few administration roles
 - Have a dedicated key administration role and give explicit key administration permissions in the key policy to this role
 - Enable AWS CloudTrail to log and monitor all operations on the KMS keys
+
+### Enforcing usage of a designated KMS key
 
 ## Amazon S3 access control
 Developing ML models requires access to sensitive data stored on specific S3 buckets. You might want to implement controls to guarantee that:
@@ -211,15 +238,25 @@ By default, containers access S3 via VPC Endpoints within the Platform VPC witho
 ## Control access to SageMaker resources by using tags
 https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy
 
+## Further approaches for data protection
+You can control access to datasets with [Amazon S3 access points](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points.html). A recommended practices is to define a designated access point for each application or team which requires a specific set of data entitlements. Implement access point policies enforcing usage of designated KMS keys and object tags. There is a default quota of 10,000 access points per account per Region. You can request a service quota increase if you need more than 10,000 access point for a single account in a single Region.
+
+Consider [access points restrictions and limitations](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-restrictions-limitations.html)
+
 ## Conclusion
+
+## Continue with the next lab
+You can move to the [lab 3](../02-lab-02/lab-03.md) which demonstrates how to implement monitoring, governance guardrails and security controls.
 
 ## Additional resources
 The following resources provide additional details and reference for data security and access topics.
 
+- [Data protection in SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/data-protection.html)
 - [Building a Data Perimeter on AWS](https://docs.aws.amazon.com/whitepapers/latest/building-a-data-perimeter-on-aws/building-a-data-perimeter-on-aws.html)
 - [Protect Data at Rest Using Encryption](https://docs.aws.amazon.com/sagemaker/latest/dg/encryption-at-rest.html)
 - [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/)
 - [Key policies in AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html)
+- [What is ABAC for AWS?](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html)
 
 ---
 

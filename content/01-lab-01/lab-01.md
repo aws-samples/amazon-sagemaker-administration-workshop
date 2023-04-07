@@ -861,7 +861,7 @@ In this lab you learned how to apply the network security and compliance approac
  
 You learned the following recommended practices for domain setup:
 - Use a [private VPC](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-getting-started.html) with subnets, [NACLs](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html) and [security groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) for locking down the Studio environment and SageMaker workloads.
-- Use [VPC endpoints](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html) and [VPC PrivateLink](https://docs.aws.amazon.com/vpc/latest/userguide/endpoint-service.html) to control access to resources in your VPC and to AWS services.
+- Use [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/userguide/endpoint-service.html) to control access to resources in your VPC and to AWS services.
 - Enable [network isolation](https://docs.aws.amazon.com/vpc/index.html) to prevent SageMaker jobs from making any outbound network calls, even to AWS services.
 - Use Studio [user profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) and SageMaker execution [roles](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) to differentiate access to resources and data for different user roles and applications.
 - Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
@@ -874,7 +874,7 @@ The following resources provide additional details and reference for SageMaker n
 
 - [Infrastructure Security in Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html)
 - [Amazon SageMaker - Onboard to Domain developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html)
-- [SageMaker Studio Administration Best Practices - Network management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
+- [Network management in SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
 - [New ML Governance Tools for Amazon SageMaker – Simplify Access Control and Enhance Transparency Over Your ML Projects](https://aws.amazon.com/blogs/aws/new-ml-governance-tools-for-amazon-sagemaker-simplify-access-control-and-enhance-transparency-over-your-ml-projects/)
 - [Dive deep into Amazon SageMaker Studio Notebooks architecture](https://aws.amazon.com/blogs/machine-learning/dive-deep-into-amazon-sagemaker-studio-notebook-architecture/)
 - [Secure Training and Inference with VPC](https://sagemaker.readthedocs.io/en/v2.101.0/overview.html#secure-training-and-inference-with-vpc)

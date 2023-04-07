@@ -56,7 +56,11 @@ This is a collection of documentation, blog posts, and code repository links for
 ## QR code for this repository
 You can use the following QR code to link this repository.
 
-![]()
+![](./static/img/workshop-github-qrcode.png)
+
+[Amazon SageMaker Administration Workshop](https://bit.ly/40RfQAn)
+
+---
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0
