@@ -1,5 +1,5 @@
 # Lab 1: Amazon SageMaker domain setup, network security, IAM, and user management
-This lab shows how to create a secure environment for your data science workloads, starting with the network. You learn concepts of SageMaker domain, domain network modes, and network traffic controls. Additionally you provision IAM execution roles, permission policies, and AWS KMS encryption keys.
+This lab shows how to create a secure environment for your data science workloads, starting with the network. You learn concepts of SageMaker domain, domain network modes, and network traffic controls. Additionally you provision and experiment with IAM execution roles, permission policies, and AWS KMS encryption keys.
 
 ---
 
@@ -860,6 +860,7 @@ You learned the following recommended practices for domain setup:
 - Use Studio [user profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) and SageMaker execution [roles](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) to differentiate access to resources and data for different user roles and applications.
 - Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
 
+## Continue with the next lab
 You can move to the [lab 2](../02-lab-02/lab-02.md) which demonstrates how to implement data protection in the context of your ML environment.
 
 ## Additional resources
