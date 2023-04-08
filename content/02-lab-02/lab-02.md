@@ -13,9 +13,13 @@ In this lab you're going to do:
 - Control access to SageMaker resources by using tags
 
 ## Where your data must be protected
-The ML workflow can process, copy, generate, and store a to be protected dataset resulting in multiple persistent or ephemeral data copies. As these copies represent additional threat vectors for data protection, you must be aware of them, monitor them, and implement a corresponding mitigation.
+The ML workflow can process, copy, generate, and store datasets resulting in multiple persistent or ephemeral data copies. All these copies represent additional threat vectors for data protection. You must be aware of them, monitor them, and implement a corresponding mitigation.
 
-The following table summarizes possible data copies resulted from the ML development process:
+The following diagram shows possible location and default encryption state of your data:
+
+![](../../static/design/ml-development-data-lifecycle.drawio.svg)
+
+The following table summarizes the characteristics of these possible data copies and a recommended data protection approach:
 
 Data location | Encryption | Lifetime | Data protection approach
 ---|---|---|---
@@ -28,16 +32,23 @@ Output from processing, training, and batch transform jobs stored in an S3 bucke
 Notebook cell output | No encryption | Ephemeral | Use Studio notebooks [lifecycle configuration scripts](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-lcc.html) to remove cell output periodically using [`jupyter/nbconvert`](https://github.com/jupyter/nbconvert). Start with the example for [auto-shutdown](https://github.com/aws-samples/sagemaker-studio-auto-shutdown-extension)
 Git-committed notebook with cell output | No encryption | Persistent | Use Git [pre-commit hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) to remove cell output, implement automated scanning in Git repositories
 Git-committed datasets | No encryption | Persistent | Implement automated scanning in Git repositories, use pre-commit hooks
-Shared Studio notebooks | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key, use `S3KmsKeyId`. Disable notebook sharing at the domain level
-Another EC2 instance via Studio terminal or a processing or training script | Potentially no encryption | Persistent | Implement network isolation with VPC Security Groups for Studio and block any data transfer to unauthorized EC2 instances
+Shared Studio notebooks | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key, use `S3KmsKeyId`. Disable notebook sharing at the domain level. Disable cell output sharing.
+Another EC2 instance via Studio terminal or a processing or training script | Potentially no encryption | Persistent | Implement network isolation with VPC Security Groups for Studio and block any data transfer to unauthorized EC2 instances. Log all IP traffic.
 SageMaker [Feature Store](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html) | At rest, by default with an AWS managed key | Persistent | Recommended to use a KMS key instead of an AWS managed key for offline and online store. Refer to [Security and Access Control](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-security.html) for Feature Store
-Another Amazon S3 bucket | Potentially no encryption | Persistent | Use S3 VPC endpoint policies to prevent write to any unauthorized S3 buckets
+Another Amazon S3 bucket | Potentially no encryption | Persistent | Use S3 VPC endpoint policies to prevent write to any unauthorized S3 buckets and prevent any unencrypted write.
 [Amazon Athena](https://docs.aws.amazon.com/athena/latest/ug/what-is.html) query result table | Not encrypted by default | Persistent | Refer to [Data protection in Athena](https://docs.aws.amazon.com/athena/latest/ug/security-data-protection.html) and [Encrypting Athena query results stored in Amazon S3](https://docs.aws.amazon.com/athena/latest/ug/encrypting-query-results-stored-in-s3.html)
 Amazon EMR cluster | as configured | Persistent | Use Amazon EMR encryption approaches. Refer to [Data protection in Amazon EMR](https://docs.aws.amazon.com/emr/latest/ManagementGuide/data-protection.html)
 
 ❗ Certain Nitro-based SageMaker instances include local storage, depending on the instance type. Local storage volumes are encrypted using a hardware module on the instance. You can't use a KMS key on an instance type with local storage. For a list of instance types that support local instance storage, see [Instance Store Volumes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#instance-store-volumes).
 
 ## Data encryption
+
+### AWS KMS keys
+The default encryption is performed with [AWS managed key](https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk). The AWS managed keys in your account that are created, managed, and used on your behalf by an AWS service integrated with AWS KMS.
+
+You have permission to view the AWS managed keys in your account, view their key policies, and audit their use in AWS CloudTrail logs. However, you cannot change any properties of AWS managed keys, rotate them, change their key policies, or schedule them for deletion. And, you cannot use AWS managed keys in cryptographic operations directly; the service that creates them uses them on your behalf.
+
+The recommended practice is to create and use [customer managed keys](https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk). Customer managed keys are KMS keys in your AWS account that you create, own, and manage. You have full control over these KMS keys, including establishing and maintaining their key policies, IAM policies, and grants, enabling and disabling them, rotating their cryptographic material, adding tags, creating aliases that refer to the KMS keys, and scheduling the KMS keys for deletion.
 
 ### Using KMS key policies
 Unlike other AWS resource policies, an AWS KMS key policy does not automatically give permission to the account or any of its principals. To give permission to any principal, including the account principal, you must give the permissions explicitly in the key policy.
