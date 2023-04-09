@@ -5,19 +5,32 @@ This lab shows how to implement auditing, monitoring, and governance guardrails 
 
 ## Content
 In this lab you're going to do:
+- Use AWS services [AWS CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html), [Amazon CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html), and [Amazon S3 server access logging](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) to monitor the access to API, resources, and to capture SageMaker job logs and metrics
+- Implement preventive security controls with IAM policy conditions
+- Implement detective and corrective security controls with [AWS Config](https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html), [IAM Access Analyzer](https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html), and [AWS Security Hub](https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html)
 - Learn what governance guardrails you can implement for ML workloads
-- Use AWS services [AWS CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html), [Amazon CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html), and [Amazon S3 server access logging](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) to monitor the access to API and application logs
 - Use [Amazon GuardDuty](http://aws.amazon.com/guardduty/) to monitor for malicious and unauthorized activities
 - Use [Amazon Macie](http://aws.amazon.com/macie/) to find and classify personally identifiable information (PII) in the training and inference data
-- Implement preventive security controls with IAM policy conditions
-- Implement detective and corrective security controls with [AWS Config](https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html), [IAM Access Analyzer](https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html), and [AWS Security Hub](https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html).
 
+## Step 1: logging and monitoring
 
-## Logging and monitoring
+### Monitoring with CloudWatch
+
+### Logging with CloudTrail
 
 [Source identity](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
-## Security controls
+
+
+```sh
+aws sagemaker update-domain \
+    --domain-id <DOMAIN-ID> \
+    --domain-settings-for-update "ExecutionRoleIdentityConfig=USER_PROFILE_NAME"
+```
+
+### Configure Amazon S3 server access logging
+
+## Step 2: security controls
 
 ### Preventive
 [SageMaker IAM conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
@@ -77,30 +90,7 @@ S3 VPC endpoint policy allows access only to the specified S3 project buckets wi
 
 List of common guardrails in [Permission management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
 
-#### AWS Service Catalog
-Based on pre-defined CloudFormation templates to provision requested resources.
-
-### Detective
-Logging and monitoring. You can use the following AWS services:
-- AWS CloudWatch
-- AWS CloudTrail
-- VPC Flow Logs
-- AWS Security Hub
-- Amazon GuardDuty
-- Amazon Macie
-
-https://sagemaker-workshop.com/security_for_sysops/detective/detective_lab.html
-
-### Corrective
-Re-active correction of user actions. For example, you can stop ML instances if the instance type is not approved for use by the data scientist.
-
-Use:
-- AWS Config
-- IAM Access Analyser
-- Amazon Security Hub
-
-
-## Test preventive IAM policies
+### Test preventive IAM policies
 Try to start a training job without VPC attachment:
 ```python
 container_uri = sagemaker.image_uris.retrieve(region=session.region_name, 
@@ -124,7 +114,6 @@ xgb.set_hyperparameters(objective='binary:logistic',
 
 xgb.fit({'train': train_set_pointer, 'validation': validation_set_pointer})
 ```
-
 
 You get `AccessDeniedException` because of the explicit `Deny` in the IAM policy:
 
@@ -185,12 +174,34 @@ xgb = sagemaker.estimator.Estimator(
 
 You are able to create and run the training job.
 
+### Detective controls
+Logging and monitoring. You can use the following AWS services:
+- AWS CloudWatch
+- AWS CloudTrail
+- VPC Flow Logs
+- AWS Security Hub
+- Amazon GuardDuty
+- Amazon Macie
+
+https://sagemaker-workshop.com/security_for_sysops/detective/detective_lab.html
+
+### Corrective controls
+Re-active correction of user actions. For example, you can stop ML instances if the instance type is not approved for use by the data scientist.
+
+Use:
+- AWS Config
+- IAM Access Analyser
+- Amazon Security Hub
+
+## Step 3: guardrails for ML environments
+
 ## Conclusion
 
 ## Additional resources
 - [Logging and monitoring in SageMaker Studio Administration Best Practices whitepaper](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/logging-and-monitoring.html)
 - [Monitoring in AWS Well-Architected Framework Machine Learning Lens](https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/ml-lifecycle-phase-monitoring.html)
 - [SageMaker IAM conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
+- [Amazon SageMaker for SysOps workshop](https://sagemaker-workshop.com/security_for_sysops.html)
 
 ---
 

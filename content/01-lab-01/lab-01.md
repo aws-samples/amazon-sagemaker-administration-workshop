@@ -116,7 +116,7 @@ While the [Zero Trust](https://aws.amazon.com/security/zero-trust/) conceptual m
 
 Use [Amazon Virtual Private Cloud](http://aws.amazon.com/vpc/?vpc-blogs.sort-by=item.additionalFields.createdDate&vpc-blogs.sort-order=desc) (Amazon VPC) to enable network isolation and control connectivity to only the services and users you need.
 
-Use [AWS PrivateLink](https://docs.aws.amazon.com/whitepapers/latest/aws-vpc-connectivity-options/aws-privatelink.html) and [VPC endpoints](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html) to connect your private services inside the VPC to public AWS services without need to traverse public network and to use an internet gateway in your VPC. 
+Use [AWS PrivateLink](https://docs.aws.amazon.com/whitepapers/latest/aws-vpc-connectivity-options/aws-privatelink.html) to connect your private services inside the VPC to public AWS services without need to traverse public network and to use an internet gateway in your VPC. 
 
 Use [Security Groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to control the inbound and outbound traffic for the resources the security group associated with, such as VPC endpoints or [elastic network interface](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html) (ENI). For monitoring all network traffic on ENIs you can use [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html).
 

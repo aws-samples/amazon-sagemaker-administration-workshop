@@ -1,5 +1,5 @@
 
-# Lab 2: Data protection
+# Lab 2: data protection
 This lab shows how to protect data in your ML environment. 
 
 ---
@@ -8,8 +8,8 @@ This lab shows how to protect data in your ML environment.
 In this lab you're going to do:
 - Protect data at rest using encryption with AWS KMS
 - Protect data in transit using encryption
-- Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
 - Implement RBAC and ABAC for data protection
+- Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
 - Control access to SageMaker resources by using tags
 
 ## Where your data must be protected
@@ -19,7 +19,7 @@ The following diagram shows possible location and default encryption state of yo
 
 ![](../../static/design/ml-development-data-lifecycle.drawio.svg)
 
-The following table summarizes the characteristics of these possible data copies and a recommended data protection approach:
+The following table summarizes the characteristics of these possible data copies and a recommended protection approach:
 
 Data location | Encryption | Lifetime | Data protection approach
 ---|---|---|---
@@ -41,7 +41,7 @@ Amazon EMR cluster | as configured | Persistent | Use Amazon EMR encryption appr
 
 ❗ Certain Nitro-based SageMaker instances include local storage, depending on the instance type. Local storage volumes are encrypted using a hardware module on the instance. You can't use a KMS key on an instance type with local storage. For a list of instance types that support local instance storage, see [Instance Store Volumes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#instance-store-volumes).
 
-## Data encryption
+## Step 1: implement data encryption
 
 ### AWS KMS keys
 The default encryption is performed with [AWS managed key](https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk). The AWS managed keys in your account that are created, managed, and used on your behalf by an AWS service integrated with AWS KMS.
@@ -129,7 +129,19 @@ In a real-world environment you should consider the following recommended practi
 
 ### Enforcing usage of a designated KMS key
 
-## Amazon S3 access control
+## Step 2: implement data access control
+
+Identity-based and resource-based IAM policies
+
+![](../../static/design/data-protection-abac.drawio.svg)
+
+### Control access to SageMaker resources by using tags
+https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy
+
+
+## Step 3: implement data perimeter
+
+### Amazon S3 access control with VPC endpoint polices
 Developing ML models requires access to sensitive data stored on specific S3 buckets. You might want to implement controls to guarantee that:
 
 - Only specific Studio domains or SageMaker workloads and users can access these buckets
@@ -212,7 +224,7 @@ If you want to have access ot JumpStart, you must add the following statement to
     }
 ```
 
-## Test secure S3 access
+### Test S3 access via VPC endpoints
 To verify the access to the Amazon S3 buckets for the data science environment, you can run the following commands in the Studio terminal:
 
 ```sh
@@ -243,16 +255,15 @@ aws sts get-caller-identity
 
 All operations are performed under the SageMaker user profile execution role.
 
-## Data protection in SageMaker jobs
+### Use VPC controls in SageMaker jobs
 By default, containers access S3 via VPC Endpoints within the Platform VPC without traversing the public network. For more control, the customer may alternately connect the instance to a customer VPC for privately managed egress, and can require this through an [IAM condition key](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html#amazonsagemaker-policy-keys) on a policy attached to the role passed to SageMaker. [VPC mode](https://docs.aws.amazon.com/sagemaker/latest/dg/train-vpc.html) should be chosen when the S3 buckets containing the input/output data have policies restricting their access to specific customer-managed VPC Endpoints. Amazon SageMaker performs download and upload operations against Amazon S3 using your Amazon SageMaker Execution Role in isolation from the training container.
 
-## Control access to SageMaker resources by using tags
-https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy
-
-## Further approaches for data protection
+### Amazon S3 access points
 You can control access to datasets with [Amazon S3 access points](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points.html). A recommended practices is to define a designated access point for each application or team which requires a specific set of data entitlements. Implement access point policies enforcing usage of designated KMS keys and object tags. There is a default quota of 10,000 access points per account per Region. You can request a service quota increase if you need more than 10,000 access point for a single account in a single Region.
 
 Consider [access points restrictions and limitations](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-restrictions-limitations.html)
+
+## Step 4: implement resource isolation using tags
 
 ## Conclusion
 
