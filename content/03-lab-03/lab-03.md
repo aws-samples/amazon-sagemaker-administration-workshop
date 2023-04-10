@@ -14,14 +14,25 @@ In this lab you're going to do:
 
 ## Step 1: logging and monitoring
 
+
 ### Monitoring with CloudWatch
 
 Refer to the [Monitor Amazon SageMaker with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html) and [Log Amazon SageMaker Events with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-cloudwatch.html) in the Developer Guide.
 
 ### Logging with CloudTrail
+CloudTrail is enabled by default for your AWS account. You can use **Event history** in the CloudTrail console to view, search, download, archive, analyze, and respond to account activity across your AWS infrastructure. This includes activity made through the AWS Management Console, AWS Command Line Interface, and AWS SDKs and APIs.
 
+For this workshop you don't need to create a persistent trail to deliver log files to an Amazon S3 bucket.
 
-Refer to the [Log SageMaker API Calls with CloudTrail](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-using-cloudtrail.html) in the Developer Guide.
+In a real-time production environment it's a recommended practice to [create](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-and-update-a-trail.html) at least one trail and persistently save all CloudTrail events to a designated S3 bucket.
+
+Refer to the [Log SageMaker API Calls with CloudTrail](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-using-cloudtrail.html) in the Developer Guide for setup, configuration, and working with CloudTrail logs and trails.
+
+All SageMaker API actions except of `InvokeEndpoint` and `InvokeEndpointAsync` are logged with CloudTrail. `InvokeEndpoint` is the API process through which inferences are obtained by a client application from a deployed SageMaker model. Logging these actions would need to be handled by the client application if desired. Some `InvokeEndpoint` information is available via CloudWatch metrics.
+
+API calls that SageMaker instances, such as processing or training jobs, make on your behalf to other services such as S3, are also logged in CloudTrail and will reflect the IAM role assigned to the instances.
+
+Open the `03-lab-03.ipnyb` notebook in the Studio and call some SageMaker API to generate CloudTrail entries. Move to the next section to see the log entries and to enable user source identity for the logs.
 
 #### Enable `sourceIdentity` configuration for the domain
 AWS CloudTrail logs for resource access and API class from a Studio user profile contain only the Studio execution role as the user identity. 
