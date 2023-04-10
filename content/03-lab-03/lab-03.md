@@ -16,17 +16,55 @@ In this lab you're going to do:
 
 ### Monitoring with CloudWatch
 
+Refer to the [Monitor Amazon SageMaker with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html) and [Log Amazon SageMaker Events with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-cloudwatch.html) in the Developer Guide.
+
 ### Logging with CloudTrail
 
-[Source identity](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
+Refer to the [Log SageMaker API Calls with CloudTrail](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-using-cloudtrail.html) in the Developer Guide.
 
+#### Enable `sourceIdentity` configuration for the domain
+AWS CloudTrail logs for resource access and API class from a Studio user profile contain only the Studio execution role as the user identity. 
 
+Navigate to the AWS CloudTrail console and [view the CloudTrail event history](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/view-cloudtrail-events.html). Filter events by **Event source**=`sagemaker.amazonaws.com` and **User name**=`SageMaker`. These events are originating from the operations performed by a user profile in the Studio. Open any of these events. The CloudTrail event contains the name of the user execution role as `userName` within the `userIdentity` object:
+
+![](../../static/img/cloudtrail-event-record-studio-role.png)
+
+If you need to log each individual Studio user profile activity, you must [enable](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html) `sourceIdentity` configuration to propagate the Studio user profile name to CloudTrail logs. 
+
+Perform the following steps to turn on the `sourceIdentity` for the domain:
+
+1. Stop all apps in the domain for all user profiles. Follow the [instructions](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-tasks-update-apps.html) in the Developer Guide to shut down apps.
+2. Update the trust policy for all user profile execution roles – add `sts:SourceIdentity` permission:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:SetSourceIdentity"
+            ]
+        }
+    ]
+}
+```
+3. Run the `update-domain` AWS CLI command in your local or Cloud9 terminal:
 ```sh
 aws sagemaker update-domain \
     --domain-id <DOMAIN-ID> \
     --domain-settings-for-update "ExecutionRoleIdentityConfig=USER_PROFILE_NAME"
 ```
+4. Sign in to Studio via one of the user profiles. After approx. 5 min the JupyterServer app is created and the Studio UX comes up.
+
+Now you can call some API from the Studio notebook, for example `DescribeDomain`. 
+Navigate to the CloudTrail event history and validate that you can view the user profile in the log entry for the service accessed. The user profile is given as the `sourceIdentity` value in the `userIdentity` section:
+
+![](../../static/img/cloudtrail-event-record-source-identity.png)
 
 ### Configure Amazon S3 server access logging
 
@@ -199,6 +237,7 @@ Use:
 
 ## Additional resources
 - [Logging and monitoring in SageMaker Studio Administration Best Practices whitepaper](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/logging-and-monitoring.html)
+- [Monitor SageMaker in the Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-overview.html)
 - [Monitoring in AWS Well-Architected Framework Machine Learning Lens](https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/ml-lifecycle-phase-monitoring.html)
 - [SageMaker IAM conditions and actions](https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html)
 - [Amazon SageMaker for SysOps workshop](https://sagemaker-workshop.com/security_for_sysops.html)
