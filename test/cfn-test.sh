@@ -74,3 +74,35 @@ aws cloudformation describe-stacks \
     --stack-name sagemaker-admin-workshop-kms  \
     --output table \
     --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
+
+
+# network-natgw.yaml
+export AZ_NAMES=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='AvailabilityZones'].OutputValue")
+export AZ_NUMBER=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='NumberOfAZs'].OutputValue")
+export VPC_ID=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='VPCId'].OutputValue")
+export PRIVATE_RT_IDS=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='PrivateRouteTableIds'].OutputValue")
+
+aws cloudformation deploy \
+    --template-file cfn-templates/network-natgw.yaml \
+    --stack-name sagemaker-admin-workshop-natgw \
+    --parameter-overrides \
+    AvailabilityZones=$AZ_NAMES \
+    NumberOfAZs=$AZ_NUMBER \
+    ExistingVPCId=$VPC_ID \
+    ExistingPrivateRouteTableIds=$PRIVATE_RT_IDS \
+    PublicSubnet1CIDR=192.168.64.0/20 \
+    PublicSubnet2CIDR=192.168.96.0/20 \
+    PublicSubnet3CIDR=192.168.112.0/20 
+

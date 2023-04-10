@@ -91,7 +91,7 @@ Resources:
               - ec2:DescribeVpcEndpoints
               - ec2:DescribeVpcs
             Resource:
-              - !Sub 'arn:aws:ec2:*:${AWS::AccountId}:*'
+              - '*'
             Effect: Allow
           - Sid: AmazonSageMakerIAMReadOnlyPolicy
             Action:
@@ -202,23 +202,32 @@ Resources:
             Resource:
               - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
             Effect: Allow
+          - Sid: UseJobVPCConfigPermission
+            Action:
+              - ec2:CreateNetworkInterface
+              - ec2:CreateNetworkInterfacePermission
+              - ec2:DeleteNetworkInterface
+              - ec2:DeleteNetworkInterfacePermission
+            Resource:
+              - !Sub 'arn:aws:ec2:*:${AWS::AccountId}:*'
+            Effect: Allow
           - Sid: AmazonSageMakerCreate
             Action:
               - sagemaker:Create*
             Resource:
               - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
             Effect: Allow
-          - Sid: SSMReadPermission 
-            Action:
-              - ssm:GetParameter*
-            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sagemaker-admin-workshop-${AWS::Region}-${AWS::AccountId}*'
-            Effect: Allow 
             Condition:
               ForAnyValue:StringEquals:
                 aws:TagKeys:
                   - team
               StringEqualsIfExists:
                 aws:RequestTag/team: ${aws:PrincipalTag/team}
+          - Sid: SSMReadPermission 
+            Action:
+              - ssm:GetParameter*
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sagemaker-admin-workshop-${AWS::Region}-${AWS::AccountId}*'
+            Effect: Allow 
           - Sid: AmazonSageMakerUpdateDeleteExecutePolicy
             Action:
               - sagemaker:Delete*

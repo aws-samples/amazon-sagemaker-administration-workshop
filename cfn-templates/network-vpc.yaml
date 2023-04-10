@@ -6,6 +6,18 @@ Description: >-
   This template create a Multi-AZ, multi-subnet VPC infrastructure with optional managed NAT gateways in the public subnet for each AZ and VPC endpoints for PrivateLink access to AWS services
 
 Outputs:
+  NumberOfAZs:
+    Description: Number of AZs used in VPC
+    Value: !Ref NumberOfAZs
+  
+  AvailabilityZones:
+    Description: List of AZs used in VPC
+    Value: !Join
+        - ','
+        - - !Select ['0', !Ref 'AvailabilityZones']
+          - !If [ 2AZCondition, !Select ['1', !Ref 'AvailabilityZones'], !Ref AWS::NoValue ]
+          - !If [ 3AZCondition, !Select ['2', !Ref 'AvailabilityZones'], !Ref AWS::NoValue ]
+
   VPCId:
     Description: SageMaker VPC ID
     Value: !If [NewVPCCondition, !Ref 'VPC', !Ref ExistingVPCId]
@@ -19,6 +31,17 @@ Outputs:
         - - !Ref PrivateSubnet1A
           - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
           - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+      - !Ref ExistingPrivateSubnetIds
+
+  PrivateRouteTableIds:
+    Description: Ids of the private route tables
+    Value: !If
+      - PrivateSubnetsCondition
+      - !Join
+        - ','
+        - - !Ref PrivateSubnet1ARouteTable
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2ARouteTable, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3ARouteTable, !Ref AWS::NoValue ]
       - !Ref ExistingPrivateSubnetIds
 
   SageMakerSecurityGroupIds:

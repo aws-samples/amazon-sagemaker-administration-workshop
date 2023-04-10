@@ -656,6 +656,7 @@ Often you need to access to Python packages in your internet-free environment. T
 ### Add a NAT gateway
 Let's add a public internet connectivity to the Studio by adding a [NAT gateway](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html).
 
+#### Deploy a NAT gateway manually
 You can add a NAT gateway to your VPC manually by completing the following tasks:
 - add an [Internet gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html) to the VPC
 - add at least one public subnet with a route to the Internet gateway
@@ -663,14 +664,48 @@ You can add a NAT gateway to your VPC manually by completing the following tasks
 - associate an elastic IP address with the NAT gateway
 - add a route to the NAT gateway endpoint to the private subnet route table
 
+#### Deploy a NAT gateway with a CloudFormation template
 Alternatively you can deploy the provided CloudFormation [template](../../cfn-templates/network-natgw.yaml) to add a NAT gateway to your VPC. 
 
-Run the following command in the local terminal:
+Run the following commands in the local terminal. 
+Get the parameters from the VPC deployment stack:
 ```sh
-
+export AZ_NAMES=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='AvailabilityZones'].OutputValue")
+export AZ_NUMBER=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='NumberOfAZs'].OutputValue")
+export VPC_ID=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='VPCId'].OutputValue")
+export PRIVATE_RT_IDS=$(aws cloudformation describe-stacks \
+    --stack-name sagemaker-admin-workshop-vpc  \
+    --output text \
+    --query "Stacks[0].Outputs[?OutputKey=='PrivateRouteTableIds'].OutputValue")
 ```
 
-After the deployment completed, open Studio and check that you have internet connectivity in the notebook.
+Deploy a NAT gateway. You can use other CIDR which reflect your environment:
+```sh
+aws cloudformation deploy \
+    --template-file cfn-templates/network-natgw.yaml \
+    --stack-name sagemaker-admin-workshop-natgw \
+    --parameter-overrides \
+    AvailabilityZones=$AZ_NAMES \
+    NumberOfAZs=$AZ_NUMBER \
+    ExistingVPCId=$VPC_ID \
+    ExistingPrivateRouteTableIds=$PRIVATE_RT_IDS \
+    PublicSubnet1CIDR=192.168.64.0/20 \
+    PublicSubnet2CIDR=192.168.96.0/20 \
+    PublicSubnet3CIDR=192.168.112.0/20 
+```
+
+After the deployment completed, navigate to the Studio and check that you have internet connectivity in the notebook:
+
+![](../../static/img/checkip-internet-connectivity.png)
 
 ### Control traffic with AWS Network Firewall
 Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
@@ -793,7 +828,7 @@ You specify your VPC configuration when you create a SageMaker workload such as 
 By using the VPC configuration you can control all data ingress or egress for SageMaker jobs with your own security controls.
 The minimum expectations on the security group you use for SageMaker jobs are:
 1. Allow ingress and egress from the same security group (self-referencing rule)
-2. Allow outbound access to S3 
+2. Allow outbound access to S3 to download and upload data
 
 Training jobs offer the option to [EnableNetworkIsolation](https://docs.aws.amazon.com/sagemaker/latest/dg/mkt-algo-model-internet-free.html) during creation which prevents any outbound network calls from the algorithm container, even to other AWS services such as Amazon S3. No AWS credentials are made available to the container runtime if network isolation is enabled. Network isolation is required for training jobs and models run using resources from AWS Marketplace, where this is available. For training jobs with multiple instances, inter-container network traffic is limited to job specific peers using dedicated per-job security groups managed by the platform by default.
 
@@ -807,32 +842,28 @@ network_config = NetworkConfig(
         encrypt_inter_container_traffic=True)
 ```
 
-You use the `NetworkConfig` for creation SageMaker training jobs, for example for the [`Estimator`](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.Estimator) class:
+You use the `NetworkConfig` for creation of SageMaker jobs, for example for the [`Processor`](https://sagemaker.readthedocs.io/en/stable/api/training/processing.html#sagemaker.processing.Processor) class:
 ```python
-xgb = sagemaker.estimator.Estimator(
-    image_uri=container_uri,
-    role=sagemaker_execution_role, 
-    instance_count=2, 
-    instance_type='ml.m5.xlarge',
-    output_path='s3://{}/{}/model-artifacts'.format(default_bucket, prefix),
-    sagemaker_session=sagemaker_session,
-    base_job_name='reorder-classifier',
-    subnets=network_config.subnets,
-    security_group_ids=network_config.security_group_ids,
-    encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
-    enable_network_isolation=network_config.enable_network_isolation,
-    volume_kms_key=ebs_kms_id,
-    output_kms_key=s3_kms_id
-  )
+sklearn_processor = SKLearnProcessor(
+    framework_version=framework_version,
+    role=sm_role,
+    instance_type=processing_instance_type,
+    instance_count=processing_instance_count, 
+    base_job_name="sm-admin-workshop-processing',
+    sagemaker_session=sm_session,
+    network_config=network_config
+)
 ```
 
-Other SageMaker Python SDK classes for processing, model monitoring, AutoML, and models also support network configuration. Check the individual class specifications for more details:
-- [`Processor`](https://sagemaker.readthedocs.io/en/stable/api/training/processing.html#sagemaker.processing.Processor)
+Other SageMaker Python SDK classes for training, model hosting, AutoML, and model monitoring also support network configuration. Check the individual class specifications for more details:
+- [`Estimator`](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.Estimator)
 - [`Model`](https://sagemaker.readthedocs.io/en/stable/api/inference/model.html#model)
 - [`AutoML`](https://sagemaker.readthedocs.io/en/stable/api/training/automl.html#sagemaker.automl.automl.AutoML)
 - [`ModelMonitor`](https://sagemaker.readthedocs.io/en/stable/api/inference/model_monitor.html#sagemaker.model_monitor.model_monitoring.ModelMonitor)
 
 The provided workshop notebook shows a working example of using VPC configuration for a SageMaker processing job.
+
+If you don't specify the `NetworkConfig` for the processing job in the lab 01 notebook, the example will also run successfully. In this case SageMaker users the Platform VPC to place all job's ENIs and handle all IP traffic. In the lab 03 you learn how to enforce usage of the network configuration via the IAM identity-based policies.
 
 ### Network traffic monitoring
 [VPC flow logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) allows you to log IP traffic to and from all network interfaces in your VPC. You can publish the logs to Amazon CloudWatch, Amazon S3, or Amazon Kinesis Data Firehose. As soon as the logs are published, you can implement logs analytics or visualization to understand your traffic and find possible issues with:
