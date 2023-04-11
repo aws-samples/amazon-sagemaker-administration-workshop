@@ -128,28 +128,112 @@ In a real-world environment you should consider the following recommended practi
 - Enable AWS CloudTrail to log and monitor all operations on the KMS keys
 
 ### Enforcing usage of a designated KMS key
+In this exercise you're going to enforce Studio user to use a designated KMS key to encrypt input data for a processing or training job. We use the `sagemaker:VolumeKmsKey` IAM condition key to implement a `Deny` inline policy.
+
+Navigate to the notebook `02-lab-02.ipynb` for the source code.
+
+Replace the placeholder `EBS-KEY-ARN` with the key ARN and add the following inline policy to any of _DataScience_ or _MLOps_ user profile execution role. The CloudFormation stack for KMS key provisioning stored the key ARNs in the SSM parameter store. The notebook contains code to retrieve the key ARN.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EnforceEncryption",
+            "Effect": "Deny",
+            "Action": [
+                "sagemaker:CreateTrainingJob",
+                "sagemaker:CreateProcessingJob"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ArnNotEquals": {
+                    "sagemaker:VolumeKmsKey": "<EBS-KEY-ARN>"
+                }
+            }
+        }
+
+     ]
+}
+```
+
+Follow the instructions in the notebook: create a `NetworkConfig`, create a processing job, run the Processor. First, don't provide the `volume_kms_key` parameter:
+```python
+# Create a processor
+sklearn_processor = SKLearnProcessor(
+    framework_version=framework_version,
+    role=sm_role,
+    instance_type=processing_instance_type,
+    instance_count=processing_instance_count, 
+    base_job_name='sm-admin-workshop-processing',
+    sagemaker_session=sm_session,
+    network_config=network_config,
+    # volume_kms_key = ebs_key_arn
+)
+```
+
+Run the processor:
+```python
+# Start the processing job
+sklearn_processor.run(
+        inputs=processing_inputs,
+        outputs=processing_outputs,
+        code='preprocessing.py',
+        wait=True,
+)
+```
+
+The execution fails immediately with an `AccessDeniedException` because of the `Deny` policy in the user profile execution role:
+
+![](../../static/img/start-processing-job-without-key.png)
+
+Now provide the `volume_kms_key` parameter for the processor:
+```python
+# Create a processor
+sklearn_processor = SKLearnProcessor(
+    framework_version=framework_version,
+    role=sm_role,
+    instance_type=processing_instance_type,
+    instance_count=processing_instance_count, 
+    base_job_name='sm-admin-workshop-processing',
+    sagemaker_session=sm_session,
+    network_config=network_config,
+    volume_kms_key = ebs_key_arn
+)
+```
+
+Run the processing job. This time the execution starts and succeeds.
 
 ## Step 2: implement data access control
 
-Identity-based and resource-based IAM policies
+Use identity-based and resource-based IAM policies and tab-bases access control.
 
 ![](../../static/design/data-protection-abac.drawio.svg)
 
-### Control access to SageMaker resources by using tags
-https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy
+💡 Experimentation idea: 
+Implement tag-based data access control following the blog post [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/).
 
+### Control access to SageMaker resources by using tags
+
+💡 Experimentation idea: 
+Implement tag-based access control following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
 
 ## Step 3: implement data perimeter
 
 ### Amazon S3 access control with VPC endpoint polices
-Developing ML models requires access to sensitive data stored on specific S3 buckets. You might want to implement controls to guarantee that:
+Developing ML models requires access to sensitive data stored on specific S3 buckets. You need to implement controls to guarantee that:
 
 - Only specific Studio domains or SageMaker workloads and users can access these buckets
 - Each Studio domain or SageMaker workload have access to the defined S3 buckets only
 
-We implement this requirement by using an S3 VPC Endpoint in your private VPC and configuring VPC Endpoint and S3 bucket policies.
+You can implement this requirement by using an S3 VPC Endpoint in your VPC and configuring VPC Endpoint and S3 bucket resource policies.
 
-First, start with the S3 bucket policy attached to the **specific S3 bucket**:
+In this example you're going to secure the SageMaker default bucket. You can retrieve the bucket name using the SageMaker Python SDK `Session` helper: 
+```python
+bucket_name = sagemaker.Session().default_bucket()
+```
+
+First, attach the following S3 bucket policy attached to the SageMaker default bucket:
 ```json
 {
     "Version": "2008-10-17",
@@ -163,8 +247,8 @@ First, start with the S3 bucket policy attached to the **specific S3 bucket**:
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::<s3-bucket-name>/*",
-                "arn:aws:s3:::<s3-bucket-name>"
+                "arn:aws:s3:::<SageMaker-default-bucket-name>/*",
+                "arn:aws:s3:::<SageMaker-default-bucket-name>"
             ],
             "Condition": {
                 "StringNotEquals": {
@@ -175,9 +259,10 @@ First, start with the S3 bucket policy attached to the **specific S3 bucket**:
     ]
 }
 ```
-The bucket policy explicitly denies all access to the bucket which does not come from the **designated VPC endpoint**.
 
-Second, attach the following permission policy to the **S3 VPC Endpoint**:
+The bucket policy explicitly denies all access to the bucket which does not come from the designated S3 endpoint in your VPC.
+
+Second, attach the following permission policy to the S3 VPC Endpoint:
 ```json
 {
     "Version": "2012-10-17",
@@ -191,23 +276,23 @@ Second, attach the following permission policy to the **S3 VPC Endpoint**:
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::<s3-bucket-name>",
-                "arn:aws:s3:::<s3-bucket-name>/*"
+                "arn:aws:s3:::<SageMaker-default-bucket-name>",
+                "arn:aws:s3:::<SageMaker-default-bucket-name>/*"
             ]
         }
     ]
 }
 ```
-This policy allows access the designated S3 buckets only.
+This policy allows access the specified S3 buckets only.
 
-This combination of S3 bucket policy and VPC endpoint policy, together with Amazon SageMaker Studio VPC connectivity, establishes that SageMaker Studio can only access the referenced S3 bucket, and this S3 bucket can only be accessed from the VPC endpoint.
+This combination of the S3 bucket policy and the VPC endpoint policy ensures that the Studio user profile can only access the intended S3 bucket, and this S3 bucket can only be accessed from the specified S3 VPC endpoint.
 
 ❗ You will not be able to access these S3 buckets from the AWS console or `aws cli`.
 
 All network traffic between Amazon SageMaker Studio and S3 is routed via the designated S3 VPC Endpoint over AWS private network and never traverses public internet.
 
-You may consider to enable access to other S3 buckets via S3 VPC endpoint policy, for example to shared public SageMaker buckets, to enable additional functionality in the Amazon SageMaker Studio, like [JumpStart](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-jumpstart.html).
-If you want to have access ot JumpStart, you must add the following statement to the S3 VPC endpoint policy:
+You may consider to enable access to other S3 buckets in the S3 VPC endpoint policy, for example to shared public SageMaker buckets, to enable additional functionality in the Amazon SageMaker Studio, like [JumpStart](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-jumpstart.html).
+If you want to have access to JumpStart, you must add the following statement to the S3 VPC endpoint policy:
 ```json
     {
       "Effect": "Allow",
@@ -225,35 +310,47 @@ If you want to have access ot JumpStart, you must add the following statement to
 ```
 
 ### Test S3 access via VPC endpoints
-To verify the access to the Amazon S3 buckets for the data science environment, you can run the following commands in the Studio terminal:
+To verify the access to the Amazon S3 buckets from the Studio, run the following commands in the Studio terminal:
 
+1. List all S3 buckets in your AWS account:
 ```sh
 aws s3 ls
 ```
-![aws s3 ls](../img/s3-ls-access-denied.png)
+![aws s3 ls](../../static//img/s3-ls-access-denied.png)
 
 The S3 VPC endpoint policy blocks access to S3 `ListBuckets` operation.
 
+2. List the intended S3 bucket (`SageMaker-default-bucket-name`):
 ```sh
-aws s3 ls s3://<sagemaker deployment data S3 bucket name>
+aws s3 ls s3://<SageMaker-default-bucket-name>
 ```
-![aws s3 ls allowed](../img/s3-ls-access-allowed.png)
+![aws s3 ls allowed](../../static/img/s3-ls-access-allowed.png)
 
-You can access the data science environment's data or models S3 buckets.
+The combination of the S3 bucket policy and the VPC endpoint policy allow access to the intended S3 bucket.
 
+3. List an unintended S3 bucket, like any existing bucket in your AWS account in the same region:
 ```sh
-aws s3 mb s3://<any available bucket name>
+aws s3 ls s3://<any other existing bucket in your AWS account>
 ```
-![aws s3 mb](../img/s3-mb-access-denied.png)
+![](../../static/img/s3-ls-access-denied2.png)
 
-The S3 VPC endpoint policy blocks access to any other S3 bucket.
+This operation is denied because the VPC endpoint doesn't allow access to any unintended S3 buckets.
 
+4. Create a new S3 bucket:
+```sh
+aws s3 mb s3://<a new bucket name>
+```
+![aws s3 mb](../../static/img/s3-mb-access-denied.png)
+
+The S3 VPC endpoint policy blocks access to any unintended S3 bucket and to unauthorized API such as `s3:CreateBucket`.
+
+5. Check the Studio execution role:
 ```sh
 aws sts get-caller-identity
 ```
-![get role](../img/sagemaker-execution-role.png)
+![get role](../../static/img/studio-user-profile-execution-role.png)
 
-All operations are performed under the SageMaker user profile execution role.
+All operations are performed under this Studio user profile execution role.
 
 ### Use VPC controls in SageMaker jobs
 By default, containers access S3 via VPC Endpoints within the Platform VPC without traversing the public network. For more control, the customer may alternately connect the instance to a customer VPC for privately managed egress, and can require this through an [IAM condition key](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html#amazonsagemaker-policy-keys) on a policy attached to the role passed to SageMaker. [VPC mode](https://docs.aws.amazon.com/sagemaker/latest/dg/train-vpc.html) should be chosen when the S3 buckets containing the input/output data have policies restricting their access to specific customer-managed VPC Endpoints. Amazon SageMaker performs download and upload operations against Amazon S3 using your Amazon SageMaker Execution Role in isolation from the training container.
@@ -264,6 +361,11 @@ You can control access to datasets with [Amazon S3 access points](https://docs.a
 Consider [access points restrictions and limitations](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-restrictions-limitations.html)
 
 ## Step 4: implement resource isolation using tags
+
+💡 Experimentation idea: 
+Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolatio](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
+
+You can use the following sample `Deny` policy:
 
 ```json
 {
@@ -294,7 +396,7 @@ Consider [access points restrictions and limitations](https://docs.aws.amazon.co
             "Resource": "*",
             "Condition": {
                 "StringNotLikeIfExists": {
-                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:us-east-1:906545278380:domain/d-hrcfizeddzyj"
+                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:us-east-1:906545278380:domain/<DOMAIN-ID>"
                 }
             }
         }

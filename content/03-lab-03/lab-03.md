@@ -222,6 +222,7 @@ Detective controls based on logging and monitoring and usage the following AWS s
 - AWS CloudTrail
 - VPC Flow Logs
 - AWS Security Hub
+- Amazon GuardDuty
 - Amazon Macie
 
 Detective controls can create and publish specific events based on the configured rules and filters. The events can launch user notification and also corrective control actions, which are responsible for damage limitation or an automated response to the event.
