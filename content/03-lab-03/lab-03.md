@@ -34,7 +34,7 @@ API calls that SageMaker instances, such as processing or training jobs, make on
 
 Open the `03-lab-03.ipnyb` notebook in the Studio and call some SageMaker API to generate CloudTrail entries. Move to the next section to see the log entries and to enable user source identity for the logs.
 
-#### Enable `sourceIdentity` configuration for the domain
+#### Enable `sourceIdentity` configuration for the domain
 AWS CloudTrail logs for resource access and API class from a Studio user profile contain only the Studio execution role as the user identity. 
 
 Navigate to the AWS CloudTrail console and [view the CloudTrail event history](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/view-cloudtrail-events.html). Filter events by **Event source**=`sagemaker.amazonaws.com` and **User name**=`SageMaker`. These events are originating from the operations performed by a user profile in the Studio. Open any of these events. The CloudTrail event contains the name of the user execution role as `userName` within the `userIdentity` object:

@@ -1,7 +1,7 @@
 # IAM PassRole in Amazon SageMaker context
 [AWS IAM documentation on pass role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html)
 
-## Overview
+## Overview
 AWS IAM "pass role" mechanism allows a principal with some privileges to pass an IAM role with a different permission set to an AWS service. The service assumes the role later and perform actions on your behalf. The principal **must have** permissions (`iam:PassRole`) to pass a **specific** role to a **specific** service or services. You define which roles the user can pass with the `Resources` element of the `iam:PassRole` statement. To define which service the role can be passed you use [`iam:PassedToService`](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_iam-condition-keys.html#ck_PassedToService) condition key. For example:
 
 ```json
@@ -43,7 +43,7 @@ AssumeRolePolicyDocument:
 
 The trust policy allows a designated AWS service to assume this IAM role.
 
-## Prerequisites for PassRole
+## Prerequisites for PassRole
 To summarize: In order for a role to be passed to a service, three pre-requisites must be met:
 
 1. The principal attempting to pass the role to the service has the `iam:PassRole` entitlement with the role desired to be passed in the `Resource` field, **and all IAM conditions met**.
@@ -52,7 +52,7 @@ To summarize: In order for a role to be passed to a service, three pre-requisite
 
 ![](../../static/design/iam-passrole-explained.drawio.svg)
 
-## API calls which require PassRole permission
+## API calls which require PassRole permission
 In SageMaker context you normally attach `iam:PassRole` permission to the SageMaker execution role. The SageMaker execution role can pass specific roles with specific permissions to SageMaker processing and training jobs, pipelines, inference endpoints (`sagemaker.amazonaws.com` service), and other used services, for example to `lambda.amazonaws.com`.
 
 Refer to [documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) on `PassRole` in SageMaker context.
