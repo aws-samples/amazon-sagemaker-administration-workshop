@@ -265,6 +265,43 @@ Consider [access points restrictions and limitations](https://docs.aws.amazon.co
 
 ## Step 4: implement resource isolation using tags
 
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "SageMaker:Create*",
+                "SageMaker:Update*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ForAllValues:StringEquals": {
+                    "aws:TagKeys": [
+                        "sagemaker:domain-arn"
+                    ]
+                }
+            }
+        },
+        {
+            "Effect": "Deny",
+            "Action": [
+                "SageMaker:Update*",
+                "SageMaker:Delete*",
+                "SageMaker:Describe*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotLikeIfExists": {
+                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:us-east-1:906545278380:domain/d-hrcfizeddzyj"
+                }
+            }
+        }
+    ]
+}
+```
+
 ## Conclusion
 
 ## Continue with the next lab

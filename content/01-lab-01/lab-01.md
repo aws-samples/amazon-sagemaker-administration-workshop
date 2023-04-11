@@ -575,7 +575,7 @@ For the majority of the use cases the implementation of DPoP is not justified an
 ### Sign in to Studio from the AWS IAM Identity center
 Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity center portal without the need to go to the console in their AWS account. Your custom profile management backend uses an API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user.
 
-TBD
+🚧 This part is coming in the next version of the workshop. 🚧
 
 ## Step 7: control user permissions with IAM identity-based policies
 In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the IAM execution roles.
@@ -706,6 +706,22 @@ aws cloudformation deploy \
 After the deployment completed, navigate to the Studio and check that you have internet connectivity in the notebook:
 
 ![](../../static/img/checkip-internet-connectivity.png)
+
+#### Clone the workshop repository to the Studio
+Now when you have the internet connectivity in the Studio, you can clone the workshop notebooks from the GitHub repository.
+
+Navigate to the Studio and open the system terminal via **File** > **New** > **Terminal**:
+
+![](../../static/img/studio-system-terminal-via-menu.png)
+
+Run the following command in the terminal:
+```sh
+git clone https://github.com/aws-samples/amazon-sagemaker-administration-workshop.git
+```
+
+The code repository will be downloaded and saved in your home directory in Studio.
+
+Navigate to the Studio file browser and open `amazon-sagemaker-administration-workshop` folder, then open `notebooks` folder. Open and run the `01-lab-01.ipnyb` notebook.
 
 ### Control traffic with AWS Network Firewall
 Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
