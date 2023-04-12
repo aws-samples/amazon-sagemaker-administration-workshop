@@ -15,8 +15,8 @@ Outputs:
     Value: !Join
         - ','
         - - !Select ['0', !Ref 'AvailabilityZones']
-          - !If [ 2AZCondition, !Select ['1', !Ref 'AvailabilityZones'], !Ref AWS::NoValue ]
-          - !If [ 3AZCondition, !Select ['2', !Ref 'AvailabilityZones'], !Ref AWS::NoValue ]
+          - !If [ 2AZCondition, !Select ['1', !Ref 'AvailabilityZones'], !Ref "AWS::NoValue" ]
+          - !If [ 3AZCondition, !Select ['2', !Ref 'AvailabilityZones'], !Ref "AWS::NoValue" ]
 
   VPCId:
     Description: SageMaker VPC ID
@@ -29,8 +29,8 @@ Outputs:
       - !Join
         - ','
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
       - !Ref ExistingPrivateSubnetIds
 
   PrivateRouteTableIds:
@@ -40,8 +40,8 @@ Outputs:
       - !Join
         - ','
         - - !Ref PrivateSubnet1ARouteTable
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2ARouteTable, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3ARouteTable, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2ARouteTable, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3ARouteTable, !Ref "AWS::NoValue" ]
       - !Ref ExistingPrivateSubnetIds
 
   SageMakerSecurityGroupIds:
@@ -782,7 +782,7 @@ Resources:
       KmsKeyId: !If
         - VPCFlowLogsCloudWatchKMSKeyCondition
         - !Ref VPCFlowLogsCloudWatchKMSKey
-        - !Ref AWS::NoValue
+        - !Ref "AWS::NoValue"
 
   VPCFlowLogsToCloudWatch:
     Condition: VPCFlowLogsToCloudWatchCondition
@@ -939,8 +939,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -956,8 +956,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -973,8 +973,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -990,8 +990,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1007,8 +1007,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1024,8 +1024,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1041,8 +1041,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1058,8 +1058,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1075,8 +1075,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1092,8 +1092,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1109,8 +1109,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1126,8 +1126,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1143,8 +1143,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1160,8 +1160,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1186,8 +1186,8 @@ Resources:
       RouteTableIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1ARouteTable
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2ARouteTable, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3ARouteTable, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2ARouteTable, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3ARouteTable, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateRouteTableIds]
 
   VPCEndpointKMS:
@@ -1206,8 +1206,8 @@ Resources:
       SubnetIds: !If
         - PrivateSubnetsCondition
         - - !Ref PrivateSubnet1A
-          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+          - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+          - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Split [',', !Ref ExistingPrivateSubnetIds]
       SecurityGroupIds:
         - !GetAtt VPCEndpointsSecurityGroup.GroupId
@@ -1270,8 +1270,8 @@ Resources:
         - !Join
           - ','
           - - !Ref PrivateSubnet1A
-            - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref AWS::NoValue ]
-            - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref AWS::NoValue ]
+            - !If [ PrivateSubnets&2AZCondition, !Ref PrivateSubnet2A, !Ref "AWS::NoValue" ]
+            - !If [ PrivateSubnets&3AZCondition, !Ref PrivateSubnet3A, !Ref "AWS::NoValue" ]
         - !Ref ExistingPrivateSubnetIds
       Description: SageMaker private subnet ids
 
