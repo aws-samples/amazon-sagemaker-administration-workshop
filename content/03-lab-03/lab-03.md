@@ -228,7 +228,8 @@ Detective controls based on logging and monitoring and leverage the following AW
 
 Detective controls can create and publish specific events based on the configured rules and filters. The events can launch user notification and also corrective control actions, which are responsible for damage limitation or an automated response to the event.
 
-💡 Experimentation idea: use Amazon Macie to detect sensitive data in S3 buckets in your account.
+💡 **Assignment 03-01**: 
+Use Amazon Macie to detect sensitive data in S3 buckets in your account.
 
 ### Corrective controls
 Corrective controls implement re-active correction of user actions or changes in the monitored environment. For example, you can stop SageMaker job instances if the instance type is not approved for use in your environment.
@@ -239,10 +240,14 @@ The following AWS services are normally used to implement event-driven workflows
 - Amazon Security Hub
 - AWS Lambda
 
-💡 Experimentation ideas:
+💡 **Assignment 03-02**:
 - Configure AWS Config for your account
+
+💡 **Assignment 03-03**:
 - Browse Access Analyzer findings in your account
-- Configure Amazon Security Hub and explore what [specific Amazon SageMaker controls](https://docs.aws.amazon.com/securityhub/latest/userguide/sagemaker-controls.html) it offers
+
+💡 **Assignment 03-04**:
+- Configure Amazon Security Hub and explore what [specific Amazon SageMaker controls](https://docs.aws.amazon.com/securityhub/latest/userguide/sagemaker-controls.html) it offers.
 
 ## Step 3: guardrails for ML environments
 

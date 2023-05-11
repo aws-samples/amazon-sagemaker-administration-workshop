@@ -215,13 +215,13 @@ Use identity-based and resource-based IAM policies and tab-bases access control.
 
 ![](../../static/design/data-protection-abac.drawio.svg)
 
-💡 Experimentation idea: 
+💡 **Assignment 02-01**: 
 Implement tag-based data access control following the blog post [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/).
 
 ### Control access to SageMaker resources by using tags
 
-💡 Experimentation idea: 
-Implement tag-based access control following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
+💡 **Assignment 02-02**: 
+Implement tag-based access control to SageMaker resources following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
 
 ## Step 3: implement data perimeter
 In this step you're going to implement a data perimeter for an S3 bucket. You're going to allow access to a designated bucket via a designated S3 VPC endpoint:
@@ -370,9 +370,12 @@ Consider [access points restrictions and limitations](https://docs.aws.amazon.co
 
 ## Step 4: implement resource isolation using tags
 
+### SageMaker multi-domain setup
+TBD
+
 ### Resource isolation for multi-domain
 
-💡 Experimentation idea: 
+💡 **Assignment 02-03**: 
 Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
 You can use the following sample `Deny` policy:
