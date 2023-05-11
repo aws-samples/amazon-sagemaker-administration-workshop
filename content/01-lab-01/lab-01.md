@@ -3,8 +3,8 @@ This lab shows how to create a secure environment for your data science workload
 
 ---
 
-## Content
-In this lab you're going to do:
+## What you're going to learn in this lab
+In this lab you're going to implement a foundational setup for your SageMaker environment by performing the following tasks:
 - Create SageMaker IAM execution roles for Studio users
 - Create AWS KMS keys for data encryption
 - Setup Amazon VPC and a network perimeter
@@ -724,7 +724,7 @@ The code repository will be downloaded and saved in your home directory in Studi
 Navigate to the Studio file browser and open `amazon-sagemaker-administration-workshop` folder, then open `notebooks` folder. Open and run the `01-lab-01.ipnyb` notebook.
 
 ### Control traffic with AWS Network Firewall
-Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
+Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [AWS Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
 
 For a working solution in a SageMaker context and more details refer to the blog post [Securing Amazon SageMaker Studio internet traffic using AWS Network Firewall](https://aws.amazon.com/blogs/machine-learning/securing-amazon-sagemaker-studio-internet-traffic-using-aws-network-firewall/).
 
@@ -912,6 +912,10 @@ You learned the following recommended practices for domain setup:
 - Enable [network isolation](https://docs.aws.amazon.com/vpc/index.html) to prevent SageMaker jobs from making any outbound network calls, even to AWS services.
 - Use Studio [user profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile.html) and SageMaker execution [roles](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html) to differentiate access to resources and data for different user roles and applications.
 - Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
+
+### Secure the edge perimeter
+In this lab we don't implement edge network security. You can secure the edge perimeter with services like [AWS Network Firewall]() to generally control and filter the network traffic, [AWS Web Application Firewall (WAF)](https://aws.amazon.com/waf/) to control access to your ML inference API, and [AWS Firewall Manager service](https://aws.amazon.com/firewall-manager/) to centrally control firewall rules in your accounts.
+
 
 ## Continue with the next lab
 You can move to the [lab 2](../02-lab-02/lab-02.md) which demonstrates how to implement data protection in the context of your ML environment.

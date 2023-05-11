@@ -3,7 +3,7 @@ This lab shows how to implement auditing, monitoring, and governance guardrails 
 
 ---
 
-## Content
+## What you're going to learn in this lab
 In this lab you're going to do:
 - Use AWS services [AWS CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html), [Amazon CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html), and [Amazon S3 server access logging](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) to monitor the access to API, resources, and to capture SageMaker job logs and metrics
 - Implement preventive security controls with IAM policy conditions
@@ -24,7 +24,7 @@ By default, SageMaker publish activities like notebook usage, job metrics, endpo
 
 You can configure alarms for specified thresholds or messages in the logs, and publish events for user notification and automated event-based workflows.
 
-Refer to the [Monitor Amazon SageMaker with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html) and [Log Amazon SageMaker Events with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-cloudwatch.html) in the Developer Guide for more details.
+Refer to the [Monitor Amazon SageMaker with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html) and [Log Amazon SageMaker Events with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-cloudwatch.html) in the Developer Guide for more details and supported event types.
 
 Navigate to CloudWatch console in your account and open `/aws/sagemaker/studio` log group. Browse the log streams and log messages inside this group. 
 
@@ -217,9 +217,10 @@ Navigate to the notebook, set the `private_subnet_ids` to some unintended value,
 ### Detective controls
 Detective controls identify potential security issues or threats or incidents that have already happened.
 
-Detective controls based on logging and monitoring and usage the following AWS services:
+Detective controls based on logging and monitoring and leverage the following AWS services:
 - Amazon CloudWatch
 - AWS CloudTrail
+- AWS Config
 - VPC Flow Logs
 - AWS Security Hub
 - Amazon GuardDuty
@@ -248,7 +249,10 @@ The following AWS services are normally used to implement event-driven workflows
 🚧 This part is coming in the next version of the workshop. 🚧
 
 ## Conclusion
+In this lab you learned how to implement another important line of defense for your in-depth security architecture. You learned how to use logging services AWS CloudTrail and Amazon CloudWatch with SageMaker, how to implement preventive controls with IAM identity-based and resource-based policies, and how to implement detective and corrective controls.
 
+## Continue with the clean-up
+If you do this workshop in your own AWS Account, you must delete provisioned resources to avoid costs. Navigate to the [clean-up](../900-clean-up/clean-up.md) instructions now.
 
 ## Additional resources
 - [Logging and monitoring in SageMaker Studio Administration Best Practices whitepaper](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/logging-and-monitoring.html)

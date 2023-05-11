@@ -4,18 +4,20 @@ This lab shows how to protect data in your ML environment.
 
 ---
 
-## Content
+## What you're going to learn in this lab
 In this lab you're going to do:
-- Protect data at rest using encryption with AWS KMS
+- Protect data at rest using encryption with AWS Key Management Service (KMS)
 - Protect data in transit using encryption
-- Implement RBAC and ABAC for data protection
+- Implement role-based (RBAC) and attribute-based access control (ABAC)
 - Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
 - Control access to SageMaker resources by using tags
 
-## Where your data must be protected
-The ML workflow can process, copy, generate, and store datasets resulting in multiple persistent or ephemeral data copies. All these copies represent additional threat vectors for data protection. You must be aware of them, monitor them, and implement a corresponding mitigation.
+## Where you must protect your data
+The ML workflow can process, copy, generate, and store datasets resulting in multiple persistent or ephemeral data copies. In this context _persistent_ means the data exists until it's explicitly deleted. _Ephemeral_ means the data exists for the lifespan of a specific ML workload or process and is normally deleted as part of the resource clean-up, for example after a SageMaker processing or training job finishes.
 
-The following diagram shows possible location and default encryption state of your data:
+All these data copies are the additional threat vectors for your data. You must be aware of them, monitor them, and implement a corresponding mitigation approach.
+
+The following diagram shows possible locations and encryption state of your data in a common ML lifecycle:
 
 ![](../../static/design/ml-development-data-lifecycle.drawio.svg)
 
@@ -127,7 +129,7 @@ In a real-world environment you should consider the following recommended practi
 - Have a dedicated key administration role and give explicit key administration permissions in the key policy to this role
 - Enable AWS CloudTrail to log and monitor all operations on the KMS keys
 
-### Enforcing usage of a designated KMS key
+### Enforce usage of a designated KMS key
 In this exercise you're going to enforce Studio user to use a designated KMS key to encrypt input data for a processing or training job. We use the `sagemaker:VolumeKmsKey` IAM condition key to implement a `Deny` inline policy.
 
 Navigate to the notebook `02-lab-02.ipynb` for the source code.
@@ -204,6 +206,9 @@ sklearn_processor = SKLearnProcessor(
 
 Run the processing job. This time the execution starts and succeeds.
 
+### Enforce S3 bucket encryption
+TBD
+
 ## Step 2: implement data access control
 
 Use identity-based and resource-based IAM policies and tab-bases access control.
@@ -219,12 +224,15 @@ Implement tag-based data access control following the blog post [Configuring Ama
 Implement tag-based access control following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
 
 ## Step 3: implement data perimeter
+In this step you're going to implement a data perimeter for an S3 bucket. You're going to allow access to a designated bucket via a designated S3 VPC endpoint:
+
+![](../../static/design/vpc-data-perimeter.drawio.svg)
 
 ### Amazon S3 access control with VPC endpoint polices
 Developing ML models requires access to sensitive data stored on specific S3 buckets. You need to implement controls to guarantee that:
 
 - Only specific Studio domains or SageMaker workloads and users can access these buckets
-- Each Studio domain or SageMaker workload have access to the defined S3 buckets only
+- Each Studio domain or SageMaker workload have access to the designated S3 buckets only
 
 You can implement this requirement by using an S3 VPC Endpoint in your VPC and configuring VPC Endpoint and S3 bucket resource policies.
 
@@ -233,7 +241,7 @@ In this example you're going to secure the SageMaker default bucket. You can ret
 bucket_name = sagemaker.Session().default_bucket()
 ```
 
-First, attach the following S3 bucket policy attached to the SageMaker default bucket:
+First, attach the following S3 bucket policy to the SageMaker default bucket:
 ```json
 {
     "Version": "2008-10-17",
@@ -310,7 +318,7 @@ If you want to have access to JumpStart, you must add the following statement to
 ```
 
 ### Test S3 access via VPC endpoints
-To verify the access to the Amazon S3 buckets from the Studio, run the following commands in the Studio terminal:
+After you configured and attached the permission polices, verify the access to the Amazon S3 buckets from the Studio. Run the following commands in the Studio terminal:
 
 1. List all S3 buckets in your AWS account:
 ```sh
@@ -362,8 +370,10 @@ Consider [access points restrictions and limitations](https://docs.aws.amazon.co
 
 ## Step 4: implement resource isolation using tags
 
+### Resource isolation for multi-domain
+
 💡 Experimentation idea: 
-Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolatio](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
+Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
 You can use the following sample `Deny` policy:
 
@@ -405,6 +415,7 @@ You can use the following sample `Deny` policy:
 ```
 
 ## Conclusion
+In this lab you learned how you can protect your data using three foundational approaches: encryption, data access control, and data perimeter.
 
 ## Continue with the next lab
 You can move to the [lab 3](../02-lab-02/lab-03.md) which demonstrates how to implement monitoring, governance guardrails and security controls.
@@ -414,6 +425,8 @@ The following resources provide additional details and reference for data securi
 
 - [Data protection in SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/data-protection.html)
 - [Building a Data Perimeter on AWS](https://docs.aws.amazon.com/whitepapers/latest/building-a-data-perimeter-on-aws/building-a-data-perimeter-on-aws.html)
+- [Establishing a data perimeter on AWS: Overview](https://aws.amazon.com/blogs/security/establishing-a-data-perimeter-on-aws/)
+- [Establishing a data perimeter on AWS: Allow only trusted identities to access company data](https://aws.amazon.com/blogs/security/establishing-a-data-perimeter-on-aws-allow-only-trusted-identities-to-access-company-data/)
 - [Protect Data at Rest Using Encryption](https://docs.aws.amazon.com/sagemaker/latest/dg/encryption-at-rest.html)
 - [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/)
 - [Key policies in AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html)
