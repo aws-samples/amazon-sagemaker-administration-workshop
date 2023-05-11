@@ -4,14 +4,14 @@ This workshop presents the most common administration and configuration topics i
 Working with hands-on examples, you will learn about the recommended design principles for administering and protecting your ML environments, more specifically Amazon SageMaker domains, Studio UX, and data. You will use AWS services to implement a multi-layer security architecture to help you protect your data, implement resource isolation, and architect a secure network.
 
 ## Workshop content
-- [Lab 1]((content/01-lab-01/lab-01.md)):
+- [Lab 1](content/01-lab-01/lab-01.md):
     - Setup of an Amazon SageMaker domain
     - SageMaker execution roles
     - User and profile management for the SageMaker domain
     - Network and data protection in the context of ML workloads and Amazon SageMaker
-- [Lab 2]((content/02-lab-02/lab-02.md)):
+- [Lab 2](content/02-lab-02/lab-02.md):
     - Data and resource isolation using attribute-based access control (ABAC) and role-based access control (RBAC)
-- [Lab 3]((content/03-lab-03/lab-03.md)):
+- [Lab 3](content/03-lab-03/lab-03.md):
     - Governance, monitoring, and security controls
 
 ## Infrastructure as Code considerations

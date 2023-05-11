@@ -206,7 +206,7 @@ sklearn_processor = SKLearnProcessor(
 
 Run the processing job. This time the execution starts and succeeds.
 
-### Enforce S3 bucket encryption
+### Enforce S3 bucket encryption
 TBD
 
 ## Step 2: implement data access control
@@ -418,7 +418,7 @@ You can use the following sample `Deny` policy:
 In this lab you learned how you can protect your data using three foundational approaches: encryption, data access control, and data perimeter.
 
 ## Continue with the next lab
-You can move to the [lab 3](../02-lab-02/lab-03.md) which demonstrates how to implement monitoring, governance guardrails and security controls.
+You can move to the [lab 3](../03-lab-03/lab-03.md) which demonstrates how to implement monitoring, governance guardrails and security controls.
 
 ## Additional resources
 The following resources provide additional details and reference for data security and access topics.

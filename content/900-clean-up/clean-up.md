@@ -3,7 +3,7 @@
 ❗ You don't need to perform a clean-up if you run an AWS-instructor led workshop.
 
 ## Clean up SageMaker resources
-Run all steps in the provided [clean-up notebook](https://github.com/aws-samples/amazon-sagemaker-administration/blob/master/99-clean-up.ipynb).
+Run all steps in the provided [clean-up notebook](../../notebooks/99-clean-up.ipynb).
 
 ## Remove the SageMaker domain
 If you used the AWS Console to provision a Studio domain as instructed in this workshop, and don't need the domain, you can delete the domain by following the instructions in the [Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-delete-domain.html). 
