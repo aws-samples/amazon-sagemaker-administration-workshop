@@ -60,17 +60,17 @@ The following diagram shows the recommended setup of execution roles:
 1. All users are authenticated and authorized by IAM and sign in the AWS console of the AWS account. Alternatively, users can be authenticated and authorized in your organization IdP and federated into AWS account using [AWS IAM Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html).
 2. The user IAM role controls what the user can do in AWS console and the AWS account.
 3. IAM role permission policies define access to operations, resources, and data.
-4. SageMaker domain contains a designated user profile the user can sign in to. Domain supports IAM or SSO authentication mode.
+4. SageMaker domain contains a designated user profile the user can sign in to. Domain supports IAM or IAM Identity Center authentication mode.
 5. Each profile has a dedicated execution role which defines what the user can do in Studio and Studio notebooks.
-6. The recommended practice is to to create a dedicated IAM role for the execution of SageMaker jobs, SageMaker Pipelines, model deployment, hosting, and monitoring. Each IAM role must follow the least privilege principle. You must scope each execution role based on the actions it must perform and the data and resources it must access.
-7. If you use [AWS Organizations](https://aws.amazon.com/organizations/), you can implement [Service Control Policies](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html) (SCPs) to centrally control the maximum available permissions for all accounts and all IAM roles in your organization. The SCP is an effective way to limit permissions given by IAM permission policies attached to the IAM roles.
+6. The recommended practice is to to create dedicated IAM roles for the execution of SageMaker jobs, SageMaker Pipelines, model deployment, hosting, and monitoring. Each IAM role must follow the least privilege principle. You must scope each execution role based on the actions it needs to perform and the data and resources it needs to access.
+7. If you use [AWS Organizations](https://aws.amazon.com/organizations/), you can leverage [Service Control Policies](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html) (SCPs) to centrally control the maximum available permissions for all accounts and all IAM roles in your organization. The SCP is an effective way to limit permissions given by IAM permission policies attached to the IAM roles.
 
 But enough theory for the moment and let's move to the hands-on exercises!
 
 ## Step 1: create SageMaker IAM execution roles
 You have the following options to provision required SageMaker IAM execution roles:
-- Use your own operational process for IAM role management
-- Use IaC such as CloudFormation templates
+- Use your own operational process for IAM role provisioning and management
+- Use infrastructure as code (IaC) approach such as CloudFormation templates
 - Use SageMaker [role manager](https://docs.aws.amazon.com/sagemaker/latest/dg/role-manager.html) interactively in the AWS Console. In the SageMaker role manager you can provision roles based on pre-defined [persona references](https://docs.aws.amazon.com/sagemaker/latest/dg/role-manager-personas.html).
 
 This workshop uses a CloudFormation [template](../../cfn-templates/iam-roles.yaml) to provision the following IAM roles:
@@ -120,7 +120,7 @@ Use [AWS PrivateLink](https://docs.aws.amazon.com/whitepapers/latest/aws-vpc-con
 
 Use [Security Groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to control the inbound and outbound traffic for the resources the security group associated with, such as VPC endpoints or [elastic network interface](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html) (ENI). For monitoring all network traffic on ENIs you can use [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html).
 
-The following diagram shows a minimal network configuration for the data science account with the single Availability Zone (AZ) and without internet connectivity for the private subnet:
+The following diagram shows a minimal network configuration for the SageMaker domain with the single Availability Zone (AZ) and without internet connectivity for the private subnet:
 
 ![](../../static/design/network-architecture.drawio.svg)
 
@@ -129,9 +129,9 @@ You don't need to create and configure the EFS security group. This security gro
 Each SageMaker domain has own VPC configuration, so you can configure a domain to use a shared or a dedicated VPC. Each domain uses its own EFS file system, data from different domains never shares the same EFS volume.
 
 ### Amazon VPC
-An Amazon VPC is a logically isolated virtual network environment that you control. When you create an VPC, it doesn't allow ingress or egress network traffic. By adding VPC endpoints, [internet gateways](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html) (IGW), [NAT gateways](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html) (NATGW) or AWS Transit Gateway you begin to configure your private network environment to communicate with other network resources. In this workshop communication between your SageMaker domain and any AWS service are done explicitly through private connectivity to the AWS services via VPC endpoints. 
+An Amazon VPC is a logically isolated virtual network environment that you control. When you create an VPC, it doesn't allow ingress or egress network traffic. By adding VPC endpoints, [internet gateways](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html) (IGW), [NAT gateways](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html) (NATGW) or [AWS Transit Gateway](https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/transit-gateway.html) you begin to configure your private network environment to communicate with other network resources. In this workshop all communication between your SageMaker domain and any AWS service are done explicitly through private connectivity to the AWS services via VPC endpoints. 
 
-In your production environment we recommend to create multiple subnets in multiple Availability Zones to support high availability and resilience of your ML workloads.
+In your production environment we recommend to create multiple subnets in multiple AZs to support high availability and resilience of your ML workloads.
 
 ### VPC endpoints
 The domain interacts with many AWS services, for example SageMaker, SageMaker API, Amazon S3, Amazon STS, Amazon CloudWatch, and AWS KMS. To keep the network traffic between your VPC workloads and AWS services private, you can use VPC endpoints.
@@ -242,7 +242,7 @@ aws cloudformation describe-stacks \
 ## Step 4: onboard to SageMaker domain
 A domain consists of an associated Amazon Elastic File System (EFS) volume, a list of authorized users, and a variety of security, application, policy, and Amazon Virtual Private Cloud (VPC) configurations. Users within a domain can share notebook files and other artifacts with each other.
 
-When [onboarding](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html), you can choose to use either AWS IAM Identity Center (successor to AWS Single Sign-On) (IAM Identity Center) or AWS Identity and Access Management (IAM) for authentication methods. 
+When [onboarding](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html), you can choose to use either AWS IAM Identity Center (successor to AWS Single Sign-On) or AWS Identity and Access Management (IAM) for authentication methods. 
 
 To provide domain configuration settings, you're going to use the following network, IAM, and KMS resources you provisioned in the previous step:
 - VPC ID
@@ -267,8 +267,8 @@ aws cloudformation describe-stacks \
     --query "Stacks[0].Outputs[*].[OutputKey, OutputValue]"
 ```
 
-### Create a SageMaker domain in IAM authorization mode
-In this section you create a domain using IAM authentication method.
+### Onboard to domain using IAM
+In this section you create a domain using IAM authentication method. To experiment with the domain in IAM Identity Center authentication mode, refer to a dedicated instructions [how to onboard using IAM Identity Center](./domain-sso.md).
 
 Follow the instructions in [Onboard to Amazon SageMaker Domain Using IAM](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-iam.html) in the Developer Guide and provide the configuration values as described in the following sections.
 
@@ -291,25 +291,24 @@ Follow the instructions in [Onboard to Amazon SageMaker Domain Using IAM](https:
     ![](../../static/img/create-domain-network-and-storage.png)
 
 #### Studio settings
+- **Jupyter Lab version**
+    - Leave `Jupyter Lab 3.0` version
 - **Notebook Sharing Configuration**
     - _Encryption key_: Choose the AWS KMS key `sagemaker-admin-workshop-<REGION>-<ACCOUNT-ID>-kms-s3` you provisioned in the previous step
     - Choose _Disable cell output sharing_
+- **SageMaker Project and JumpStart**
+    - Leave all options enabled
 
 #### Amazon SageMaker Canvas settings
 Disable all configurations. If you keep Canvas configuration enabled, SageMaker adds `AmazonSageMakerCanvasFullAccess` and `AmazonSageMakerCanvasAIServiceAccess` managed policies to the default SageMaker execution role. At this point we don't want to attach any other policies to this role.
 
-Wait until the domain goes into `InService` status:
+#### Finish domain provisioning
+Choose **Submit** and wait until the domain goes into `InService` status:
 
 ![](../../static/img/domain-inservice.png)
 
-### Create domain via SageMaker API
-You can create domain programmatically using:
-- AWS CLI [`aws sagemaker create-domain`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker/create-domain.html)
-- Python SDK [`create_domain`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_domain.html)
-- SageMaker API [`CreateDomain`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateDomain.html)
-
 ### Describe domain
-You can browse the domain details in the SageMaker console or use AWS CLI to describe the domain.
+You can see the domain details in the SageMaker console or use AWS CLI to describe the domain.
 In the command terminal enter the following command:
 ```sh
 aws sagemaker list-domains
@@ -324,15 +323,27 @@ You can see all the configuration settings you chosen.
 
 The domain is ready, now you need to create user profiles to be able to sign in the Studio.
 
-### Create domain using IAM Identity Center
-In this section you create a domain using IAM authentication method.
+### Code-based options to create a domain
+In the previous section you created a domain using SageMaker console. You can also provision a domain, user profiles, apps, and configure all resources by using SageMaker API, AWS CLI, or CloudFormation templates.
 
-Follow the instructions in [Onboard to Amazon SageMaker Domain Using IAM Identity Center](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-sso-users.html) in the Developer Guide and provide the configuration values as described in the following sections.
+#### Create domain via SageMaker API or AWS CLI
+You can create domain programmatically using any of:
+- AWS CLI [`aws sagemaker create-domain`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker/create-domain.html)
+- Python SDK [`create_domain`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_domain.html)
+- SageMaker API [`CreateDomain`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateDomain.html)
 
-TBD
+#### Create domain via CloudFormation template
+AWS CloudFormation offers several resources to provision SageMaker domain via templates:
+- [`AWS::SageMaker::Domain`](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sagemaker-domain.html): to create a domain with default configuration
+- [`AWS::SageMaker::UserProfile`](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sagemaker-userprofile.html): to create a user profile with specific user settings
+- [`AWS::SageMaker::App`](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sagemaker-app.html): to create a running app for the specified user profile
+
+Refer to a [template sample](https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/cfn-templates/sagemaker-domain.yaml) for a working example of CloudFormation-based provisioning of the domain.
 
 ## Step 5: create user profiles
-To use Studio you must add user profiles to the domain. In this section your create two user profiles for data scientist and MLOps engineer role users.
+To use Studio you need to add user profiles to the domain. In this section your create two user profiles for data scientist and MLOps engineer role users.
+
+Use the domain you created in IAM authentication mode for all experiments in this section. For user onboarding and management for the domain in IAM Identity Center mode refer to the section []()
 
 ### Create a data scientist user profile
 Follow the instructions in [Add and Remove User Profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile-add-remove.html) in the Developer Guide and provide the configuration values as described in the following sections.
@@ -625,6 +636,19 @@ Open the local workshop folder where you cloned the code, then open `notebooks` 
 Navigate to the Studio File Browser and then open the `01-lab-01.ipynb` notebook. Select the `Data Science` kernel and follow the instructions.
 
 After you finished playing with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
+
+### Block a permission escalation attempt
+This experiment demonstrates the importance of a proper permission setup for IAM PassRole.
+
+
+TBD: demonstrate the permission escalation use case with passing a high privilege role via a low-privilege role without a proper `iam:PassRole` permission setup. 
+1. Have a high privilege role, for example S3:* from any S3 bucket
+2. Create a Studio notebook which reads from an S3 bucket which cannot be accessed by the user profile execution role. The same notebooks outputs the data in the cell. 
+3. The read operation from the restricted S3 bucket fails in the notebook, because the execution role doesn't have read permission for this S3 bucket
+4. Create a notebook job and specify the high privilege role to run the job
+5. Run the job. The job succeeded because the job execution role has the needed permissions
+6. Open the job output notebook and see the data dump in the output -> Permission escalation
+7. Fix the issue with using a proper `iam:PassRole` configuration
 
 ## Step 8: control network traffic for Studio notebooks
 This section shows how to deal with network connectivity and to control your VPC traffic with common AWS network controls.

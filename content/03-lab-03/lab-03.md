@@ -229,7 +229,7 @@ Detective controls based on logging and monitoring and leverage the following AW
 Detective controls can create and publish specific events based on the configured rules and filters. The events can launch user notification and also corrective control actions, which are responsible for damage limitation or an automated response to the event.
 
 💡 **Assignment 03-01**: 
-Use Amazon Macie to detect sensitive data in S3 buckets in your account.
+- Use Amazon Macie to detect sensitive data in S3 buckets in your account.
 
 ### Corrective controls
 Corrective controls implement re-active correction of user actions or changes in the monitored environment. For example, you can stop SageMaker job instances if the instance type is not approved for use in your environment.
