@@ -1,5 +1,5 @@
 # Lab 1: Amazon SageMaker domain setup, network security, IAM, and user management
-This lab shows how to create a secure environment for your data science workloads, starting with the network. You learn concepts of SageMaker domain, domain network modes, and network traffic controls. Additionally you provision and experiment with IAM execution roles, permission policies, and AWS KMS encryption keys.
+This lab shows how to create a secure environment for your data science workloads, starting with the network. You learn concepts of SageMaker domain, domain authentication and network modes, and network traffic controls. Additionally you provision and experiment with IAM execution roles, permission policies, and AWS KMS encryption keys.
 
 ---
 
@@ -268,7 +268,7 @@ aws cloudformation describe-stacks \
 ```
 
 ### Onboard to domain using IAM
-In this section you create a domain using IAM authentication method. To experiment with the domain in IAM Identity Center authentication mode, refer to a dedicated instructions [how to onboard using IAM Identity Center](./domain-sso.md).
+In this section you create a domain using IAM authentication method. To experiment with the domain in IAM Identity Center authentication mode, refer to the dedicated instructions [how to onboard using IAM Identity Center](./domain-sso.md).
 
 Follow the instructions in [Onboard to Amazon SageMaker Domain Using IAM](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-iam.html) in the Developer Guide and provide the configuration values as described in the following sections.
 
@@ -340,10 +340,13 @@ AWS CloudFormation offers several resources to provision SageMaker domain via te
 
 Refer to a [template sample](https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/cfn-templates/sagemaker-domain.yaml) for a working example of CloudFormation-based provisioning of the domain.
 
+### Onboard to domain using IAM Identity Center
+If you'd like to learn how to onboard to domain in IAM Identity Center authentication mode, you can complete the dedicated step-by-step [instructions](./domain-sso.md).
+
 ## Step 5: create user profiles
 To use Studio you need to add user profiles to the domain. In this section your create two user profiles for data scientist and MLOps engineer role users.
 
-Use the domain you created in IAM authentication mode for all experiments in this section. For user onboarding and management for the domain in IAM Identity Center mode refer to the section []()
+Use the domain you created in _IAM authentication_ mode for all experiments in this section. For user onboarding and profile management for the domain in IAM Identity Center mode refer to the section []()
 
 ### Create a data scientist user profile
 Follow the instructions in [Add and Remove User Profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile-add-remove.html) in the Developer Guide and provide the configuration values as described in the following sections.
@@ -938,7 +941,7 @@ You learned the following recommended practices for domain setup:
 - Use [IAM identity-based policies and conditions](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html) in IAM user and execution roles to implement fine-grained resource and data access controls. You can also secure access to Studio within your network perimeter with IAM identity-based policies.
 
 ### Secure the edge perimeter
-In this lab we don't implement edge network security. You can secure the edge perimeter with services like [AWS Network Firewall]() to generally control and filter the network traffic, [AWS Web Application Firewall (WAF)](https://aws.amazon.com/waf/) to control access to your ML inference API, and [AWS Firewall Manager service](https://aws.amazon.com/firewall-manager/) to centrally control firewall rules in your accounts.
+In this lab we don't implement edge network security. You can secure the edge perimeter with services like [AWS Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/what-is-aws-network-firewall.html) to generally control and filter the network traffic, [AWS Web Application Firewall (WAF)](https://aws.amazon.com/waf/) to control access to your ML inference API, and [AWS Firewall Manager service](https://aws.amazon.com/firewall-manager/) to centrally control firewall rules in your accounts.
 
 
 ## Continue with the next lab
