@@ -11,8 +11,8 @@ Outputs:
     Value: !Join
         - ','
         - - !Ref NATGateway1
-          - !If [ 2AZCondition, !Ref NATGateway2, !Ref AWS::NoValue ]
-          - !If [ 3AZCondition, !Ref NATGateway3, !Ref AWS::NoValue ]
+          - !If [ 2AZCondition, !Ref NATGateway2, !Ref "AWS::NoValue" ]
+          - !If [ 3AZCondition, !Ref NATGateway3, !Ref "AWS::NoValue" ]
 
 Parameters:
   AvailabilityZones:
@@ -260,6 +260,6 @@ Resources:
       Value: !Join
         - ','
         - - !Ref NATGateway1
-          - !If [ 2AZCondition, !Ref NATGateway2, !Ref AWS::NoValue ]
-          - !If [ 3AZCondition, !Ref NATGateway3, !Ref AWS::NoValue ]
+          - !If [ 2AZCondition, !Ref NATGateway2, !Ref "AWS::NoValue" ]
+          - !If [ 3AZCondition, !Ref NATGateway3, !Ref "AWS::NoValue" ]
       Description: "NAT Gateway endpoint ids"

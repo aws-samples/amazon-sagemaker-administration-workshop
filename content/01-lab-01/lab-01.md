@@ -120,6 +120,10 @@ Use [AWS PrivateLink](https://docs.aws.amazon.com/whitepapers/latest/aws-vpc-con
 
 Use [Security Groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to control the inbound and outbound traffic for the resources the security group associated with, such as VPC endpoints or [elastic network interface](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html) (ENI). For monitoring all network traffic on ENIs you can use [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html).
 
+The combination of used security groups for the SageMaker workloads [must at minimum allow the following inbound and outbound traffic](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-notebooks-and-internet-access.html#:~:text=Set%20up%20one%20or%20more%20security%20groups%20with%20inbound%20and%20outbound%20rules%20that%20together%20allow%20the%20following%20traffic%3A):
+- NFS traffic over TCP on port 2049 between the domain and the Amazon EFS volume
+- TCP traffic within the security group (self-reference rule). This is required for connectivity between the JupyterServer app and the KernelGateway apps. 
+
 The following diagram shows a minimal network configuration for the SageMaker domain with the single Availability Zone (AZ) and without internet connectivity for the private subnet:
 
 ![](../../static/design/network-architecture.drawio.svg)
@@ -127,6 +131,8 @@ The following diagram shows a minimal network configuration for the SageMaker do
 You don't need to create and configure the EFS security group. This security group and rules are created by SageMaker automatically during creation of the domain.
 
 Each SageMaker domain has own VPC configuration, so you can configure a domain to use a shared or a dedicated VPC. Each domain uses its own EFS file system, data from different domains never shares the same EFS volume.
+
+Please note, if you use the SageMaker domain in VpcOnly mode, you [cannot use public subnets](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-notebooks-and-internet-access.html#:~:text=You%20must%20use%20private%20subnets%20only.%20You%20cannot%20use%20public%20subnets%20in%20VpcOnly%20mode).
 
 ### Amazon VPC
 An Amazon VPC is a logically isolated virtual network environment that you control. When you create an VPC, it doesn't allow ingress or egress network traffic. By adding VPC endpoints, [internet gateways](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html) (IGW), [NAT gateways](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html) (NATGW) or [AWS Transit Gateway](https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/transit-gateway.html) you begin to configure your private network environment to communicate with other network resources. In this workshop all communication between your SageMaker domain and any AWS service are done explicitly through private connectivity to the AWS services via VPC endpoints. 
@@ -383,7 +389,7 @@ Users can sign in to Studio using the following ways:
 - via a presigned domain URL
 - via IAM Identity Center
 
-Before your start experimenting with Studio sign-in, let's consider how you can control access to Studio within your network environment.
+Before your start experimenting with Studio sign-in, let's understand how you can control access to Studio within your network environment.
 
 ### Network perimeter-based access to Studio
 Studio supports several access control enforcements for network perimeter you can use to limit access to Studio for:
@@ -464,7 +470,7 @@ Replace the `<YOUR-VPC-ID>` in the policy statement with the VPC ID from the VPC
 }
 ```
 
-Open again the SageMaker console and launch Studio. This time you get `AccessDenied` exception:
+Open again the SageMaker console and try to launch Studio. This time you get `AccessDenied` exception:
 
 ![](../../static/img/access-denied-studio-sign-in.png)
 
@@ -952,8 +958,10 @@ The following resources provide additional details and reference for SageMaker n
 
 - [Infrastructure Security in Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html)
 - [Amazon SageMaker - Onboard to Domain developer guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html)
+- [Organizing Your AWS Environment Using Multiple Accounts](https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/organizing-your-aws-environment.html)
 - [Network management in SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/network-management.html)
 - [New ML Governance Tools for Amazon SageMaker – Simplify Access Control and Enhance Transparency Over Your ML Projects](https://aws.amazon.com/blogs/aws/new-ml-governance-tools-for-amazon-sagemaker-simplify-access-control-and-enhance-transparency-over-your-ml-projects/)
+- [Configure Amazon SageMaker Canvas in a VPC without internet access](https://docs.aws.amazon.com/sagemaker/latest/dg/canvas-vpc.html)
 - [Dive deep into Amazon SageMaker Studio Notebooks architecture](https://aws.amazon.com/blogs/machine-learning/dive-deep-into-amazon-sagemaker-studio-notebook-architecture/)
 - [Secure Training and Inference with VPC](https://sagemaker.readthedocs.io/en/v2.101.0/overview.html#secure-training-and-inference-with-vpc)
 - [Access an Amazon SageMaker Studio notebook from a corporate network](https://aws.amazon.com/blogs/machine-learning/access-an-amazon-sagemaker-studio-notebook-from-a-corporate-network/)

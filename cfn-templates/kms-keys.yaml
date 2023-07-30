@@ -19,7 +19,7 @@ Parameters:
     Type: String
 
 Outputs:
-    S3BucketDataKMSKeyArn:
+    S3BucketKMSKeyArn:
       Description: KMS Key ARN for the S3 buckets
       Value: !GetAtt S3BucketKMSKey.Arn
 
