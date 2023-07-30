@@ -109,7 +109,7 @@ Each user profile in the domain can contain profile-specific user settings, such
 
 You can use the following three patterns to configure user profile.
 
-#### Pattern 1: Configure user profiles up-front statically
+#### Pattern 1: Configure user profiles up-front statically
 After domain provisioning, explicitly create user profiles for IdP federated users based on the IdP or AD group membership and attributes by using [`CreateUserProfile`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateUserProfile.html) API. You can configure each profile based on some metadata, for example taken from IdP or other metadata or entitlement store. 
 
 This approach is static as everything must be provisioned up-front, including user profiles for every anticipated domain user. You also need to develop some IdP sync mechanism for user profile housekeeping and profile configuration updates based on the changes on the IdP or AD side. Refer to [Identity management](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/identity-management.html) in SageMaker Studio Administration Best Practices for some implementation examples using AWS Lambda and SAML 2.0 assertion.
@@ -349,6 +349,7 @@ The following resources provide additional details and reference for IAM Identit
 - [Identity management in SageMaker Studio Administration Best Practices](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/identity-management.html)
 - [Onboard users to Amazon SageMaker Studio with Active Directory group-specific IAM roles](https://aws.amazon.com/blogs/machine-learning/onboard-users-to-amazon-sagemaker-studio-with-active-directory-group-specific-iam-roles/)
 - [Secure Amazon SageMaker Studio presigned URLs Part 1: Foundational infrastructure](https://aws.amazon.com/blogs/machine-learning/secure-amazon-sagemaker-studio-presigned-urls-part-1-foundational-infrastructure/)
+- [Onboarding Amazon SageMaker Studio with AWS SSO and Okta Universal Directory](http://aws.amazon.com/blogs/machine-learning/onboarding-amazon-sagemaker-studio-with-aws-sso-and-okta-universal-directory/)
 
 ---
 

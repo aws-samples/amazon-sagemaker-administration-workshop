@@ -346,13 +346,13 @@ AWS CloudFormation offers several resources to provision SageMaker domain via te
 
 Refer to a [template sample](https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/cfn-templates/sagemaker-domain.yaml) for a working example of CloudFormation-based provisioning of the domain.
 
-### Onboard to domain using IAM Identity Center
+### Onboard to domain using IAM Identity Center
 If you'd like to learn how to onboard to domain in IAM Identity Center authentication mode, you can complete the dedicated step-by-step [instructions](./domain-sso.md).
 
 ## Step 5: create user profiles
 To use Studio you need to add user profiles to the domain. In this section your create two user profiles for data scientist and MLOps engineer role users.
 
-Use the domain you created in _IAM authentication_ mode for all experiments in this section. For user onboarding and profile management for the domain in IAM Identity Center mode refer to the section []()
+Use the domain you created in _IAM authentication_ mode for all experiments in this section. For user onboarding and profile management for the domain in IAM Identity Center mode refer to the section [SageMaker domain and user profile administration using AWS IAM Identity Center](./domain-sso.md) of this lab.
 
 ### Create a data scientist user profile
 Follow the instructions in [Add and Remove User Profiles](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-user-profile-add-remove.html) in the Developer Guide and provide the configuration values as described in the following sections.
@@ -592,10 +592,10 @@ To implement a more sophisticated presigned URL protection approach, you can use
 
 For the majority of the use cases the implementation of DPoP is not justified and having all communications between a user agent and a SageMaker service endpoint within a private network and encrypted would be sufficient. However, it's important to understand all security implication and threat vectors of a chosen Studio access control enforcement.
 
-### Sign in to Studio from the AWS IAM Identity center
-Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity center portal without the need to go to the console in their AWS account. Your custom profile management backend uses an API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user.
+### Sign in to Studio from the AWS IAM Identity Center
+Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity Center access portal without the need to go to the console in their AWS account. The AWS access portal calls `CreatePresignedDomainUrl` automatically under the hood when a user federates in the Studio. Your can also create a custom profile management backend using the same API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user based on your own authorization and authentication logic.
 
-🚧 This part is coming in the next version of the workshop. 🚧
+If you would like to understand how to use IAM Identity Center to manage users and user profile, refer to the [Domain in IAM Identity Center mode](./domain-sso.md) lab.
 
 ## Step 7: control user permissions with IAM identity-based policies
 In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the IAM execution roles.
@@ -646,12 +646,11 @@ Navigate to the Studio File Browser and then open the `01-lab-01.ipynb` notebook
 
 After you finished playing with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
 
-### Block a permission escalation attempt
+### Prevent a permission escalation attempt
 This experiment demonstrates the importance of a proper permission setup for IAM PassRole.
 
-
 TBD: demonstrate the permission escalation use case with passing a high privilege role via a low-privilege role without a proper `iam:PassRole` permission setup. 
-1. Have a high privilege role, for example S3:* from any S3 bucket
+1. Have a high privilege role, for example S3:* for any S3 bucket
 2. Create a Studio notebook which reads from an S3 bucket which cannot be accessed by the user profile execution role. The same notebooks outputs the data in the cell. 
 3. The read operation from the restricted S3 bucket fails in the notebook, because the execution role doesn't have read permission for this S3 bucket
 4. Create a notebook job and specify the high privilege role to run the job
@@ -825,7 +824,7 @@ Do the following steps:
 
 This policy denies access to the SSM API for all principals except the the MLOps execution role.
 
-3. If you run the same statement in the notebook, you get the `AccessDeniedException` in the notebook because of the explicit deny in the VPC endpoint policy:
+3. If you run the same statement `ssm.get_parameter()` in the notebook, you get the `AccessDeniedException` in the notebook because of the explicit deny in the VPC endpoint policy:
 
 ![](../../static/img/get-parameter-access-denied.png)
 
@@ -912,7 +911,7 @@ Other SageMaker Python SDK classes for training, model hosting, AutoML, and mode
 
 The provided workshop notebook shows a working example of using VPC configuration for a SageMaker processing job.
 
-If you don't specify the `NetworkConfig` for the processing job in the lab 01 notebook, the example will also run successfully. In this case SageMaker users the Platform VPC to place all job's ENIs and handle all IP traffic. In the lab 03 you learn how to enforce usage of the network configuration via the IAM identity-based policies.
+If you don't specify the `NetworkConfig` for the processing job in the lab 01 notebook, the example will also run successfully. In this case SageMaker users the Platform VPC to place all job's ENIs and handle all IP traffic. In the [lab 3](../03-lab-03/lab-03.md) you learn how to enforce usage of the network configuration via the IAM identity-based policies.
 
 ### Network traffic monitoring
 [VPC flow logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) allows you to log IP traffic to and from all network interfaces in your VPC. You can publish the logs to Amazon CloudWatch, Amazon S3, or Amazon Kinesis Data Firehose. As soon as the logs are published, you can implement logs analytics or visualization to understand your traffic and find possible issues with:
@@ -922,7 +921,7 @@ If you don't specify the `NetworkConfig` for the processing job in the lab 01 no
 
 It's a recommended practice to capture IP traffic with VPC Flow Logs in all your VPC. In a productive environment we recommend to capture all logs in a single log account.
 
-Your created the VPC Flow Logs when you created the VPC in the step 2 of this lab. Navigate to the VPC console in the AWS account check the **Flow logs** configuration: 
+You created the VPC Flow Logs when you created the VPC in the step 2 of this lab. Navigate to the VPC console in the AWS account check the **Flow logs** configuration: 
 
 ![](../../static/img/vpc-flow-logs.png)
 
@@ -932,7 +931,7 @@ If you navigate to the VPC Flow Logs CloudWatch log group, you'll see many `NODA
 
 The experimenting with VPC Flow Logs goes beyond the scope of this workshop, but you can use the provisioned resources and the configured log to learn and understand how to capture, analyse, and manage IP traffic logs.
 
-Congratulations, this is the last step in this lab! 
+Congratulations, this is the last step in the lab! 
 
 ---
 
