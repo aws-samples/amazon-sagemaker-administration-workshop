@@ -375,7 +375,8 @@ Disable all configurations because we don't want to add any IAM permission polic
 Wait until SageMaker finishes creating the user profile.
 
 ### Create an MLOps user profile
-Repeat the same steps to create one more user profile for an MLOps user. This user profile uses a dedicated execution role `StudioRoleMLOps` with a different permission set. The user profile execution role is the main tool to manage fine-grained Studio user permissions and access to the resources.
+Repeat the same steps to create one more user profile for an MLOps user. This user profile uses a dedicated execution role `StudioRoleMLOps` with a different permission set. The user profile execution role is the main tool to manage fine-grained Studio user permissions and access to the resources. 
+Add a new tag `team` with the value `team-B` to the user profile.
 
 ![](../../static/img/create-user-profile-general-settings-2.png)
 

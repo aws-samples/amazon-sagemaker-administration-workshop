@@ -22,6 +22,10 @@ Outputs:
     Description: The ARN of the VPC Flow Logs role
     Value: !GetAtt VPCFlowLogsRole.Arn
 
+  TagBasedResourceIsolationPolicyArn:
+    Description: The ARN of the tag-based resource isolation policy
+    Value: !Ref SageMakerTagBasedResourceIsolationPolicy
+
 Parameters:
   AllowedCIDR:
     Type: String
@@ -211,38 +215,11 @@ Resources:
             Resource:
               - !Sub 'arn:aws:ec2:*:${AWS::AccountId}:*'
             Effect: Allow
-          - Sid: AmazonSageMakerCreate
-            Action:
-              - sagemaker:Create*
-            Resource:
-              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
-            Effect: Allow
-            Condition:
-              ForAnyValue:StringEquals:
-                aws:TagKeys:
-                  - team
-              StringEqualsIfExists:
-                aws:RequestTag/team: ${aws:PrincipalTag/team}
           - Sid: SSMReadPermission 
             Action:
               - ssm:GetParameter*
             Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/sagemaker-admin-workshop-${AWS::Region}-${AWS::AccountId}*'
             Effect: Allow 
-          - Sid: AmazonSageMakerUpdateDeleteExecutePolicy
-            Action:
-              - sagemaker:Delete*
-              - sagemaker:Stop*
-              - sagemaker:Update*
-              - sagemaker:Start*
-              - sagemaker:DisassociateTrialComponent
-              - sagemaker:AssociateTrialComponent
-              - sagemaker:BatchPutMetrics
-            Resource:
-              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
-            Effect: Allow
-            Condition:
-              StringEquals:
-                aws:PrincipalTag/team: ${sagemaker:ResourceTag/team}
 
   SageMakerStudioDataScienceAccessPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -269,22 +246,22 @@ Resources:
                 iam:PassedToService: sagemaker.amazonaws.com
           - Sid: CommonJobManagement
             Action:
-                - sagemaker:CreateTrainingJob
-                - sagemaker:CreateTransformJob
-                - sagemaker:CreateProcessingJob
-                - sagemaker:CreateAutoMLJob
-                - sagemaker:CreateHyperParameterTuningJob
-                - sagemaker:StopTrainingJob
-                - sagemaker:StopProcessingJob
-                - sagemaker:StopAutoMLJob
-                - sagemaker:StopHyperParameterTuningJob
-                - sagemaker:DescribeTrainingJob
-                - sagemaker:DescribeTransformJob
-                - sagemaker:DescribeProcessingJob
-                - sagemaker:DescribeAutoMLJob
-                - sagemaker:DescribeHyperParameterTuningJob
-                - sagemaker:UpdateTrainingJob
-                - sagemaker:BatchGetMetrics
+              - sagemaker:CreateTrainingJob
+              - sagemaker:CreateTransformJob
+              - sagemaker:CreateProcessingJob
+              - sagemaker:CreateAutoMLJob
+              - sagemaker:CreateHyperParameterTuningJob
+              - sagemaker:StopTrainingJob
+              - sagemaker:StopProcessingJob
+              - sagemaker:StopAutoMLJob
+              - sagemaker:StopHyperParameterTuningJob
+              - sagemaker:DescribeTrainingJob
+              - sagemaker:DescribeTransformJob
+              - sagemaker:DescribeProcessingJob
+              - sagemaker:DescribeAutoMLJob
+              - sagemaker:DescribeHyperParameterTuningJob
+              - sagemaker:UpdateTrainingJob
+              - sagemaker:BatchGetMetrics
             Resource: 
               - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*/*'
             Effect: Allow
@@ -324,6 +301,7 @@ Resources:
               - sagemaker:DeleteExperiment
               - sagemaker:DeleteTrial
               - sagemaker:DeleteTrialComponent
+              - sagemaker:BatchPutMetrics
             Resource: arn:aws:sagemaker:*:*:*/*
           - Effect: Allow
             Action:
@@ -503,6 +481,7 @@ Resources:
               - sagemaker:DeleteExperiment
               - sagemaker:DeleteTrial
               - sagemaker:DeleteTrialComponent
+              - sagemaker:BatchPutMetrics
             Resource: arn:aws:sagemaker:*:*:*/*
           - Effect: Allow
             Action:
@@ -559,9 +538,6 @@ Resources:
               - sagemaker:DeleteMonitoringSchedule
               - sagemaker:StartMonitoringSchedule
               - sagemaker:StopMonitoringSchedule
-              - sagemaker:CreateProcessingJob
-              - sagemaker:DescribeProcessingJob
-              - sagemaker:StopProcessingJob
             Resource: arn:aws:sagemaker:*:*:*/*
           - Effect: Allow
             Action:
@@ -643,6 +619,69 @@ Resources:
               - 'sagemaker:ListTags'
             Resource: !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:user-profile/*/*'
 
+  SageMakerTagBasedResourceIsolationPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Permission policy for tab-based access control
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: DenyAddDeleteTagsIfTagExists
+            Effect: Deny
+            Action:
+              - sagemaker:AddTags
+              - sagemaker:DeleteTags
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Condition:
+              "Null":
+                aws:ResourceTag/team: false
+              StringNotEquals:
+                aws:ResourceTag/team: ${aws:PrincipalTag/team}
+
+          - Sid: DenyActionForUnintendedValue
+            Effect: Deny
+            Action:
+              - sagemaker:AddTags
+              - sagemaker:CreateProcessingJob
+              - sagemaker:CreateTrainingJob
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Condition:
+              StringNotEqualsIfExists:
+                aws:RequestTag/team: ${aws:PrincipalTag/team}
+              ForAnyValue:StringEqualsIgnoreCase:
+                aws:TagKeys:
+                  - team
+
+          - Sid: DenyIfNoTags
+            Effect: Deny
+            Action:
+              - sagemaker:CreateProcessingJob
+              - sagemaker:CreateTrainingJob
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Condition:
+              "Null":
+                aws:RequestTag/team: true
+
+          - Sid: DenyIfNoTagMatch
+            Effect: Deny
+            Action:
+              - sagemaker:DeleteProcessingJob
+              - sagemaker:StopProcessingJob
+              - sagemaker:UpdateProcessingJob
+              - sagemaker:DescribeProcessingJob
+              - sagemaker:DeleteTrainingJob
+              - sagemaker:StopTrainingJob
+              - sagemaker:UpdateTrainingJob
+              - sagemaker:DescribeTrainingJob
+            Resource:
+              - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*'
+            Condition:
+              StringNotEqualsIfExists:
+                aws:ResourceTag/team: ${aws:PrincipalTag/team}
+
   StudioRoleDefault:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -687,6 +726,8 @@ Resources:
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
         - Key: role-type
           Value: datascience 
+        - Key: team
+          Value: team-A
 
   StudioRoleMLOps:
     Type: 'AWS::IAM::Role'
@@ -713,6 +754,8 @@ Resources:
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
         - Key: role-type
           Value: mlops
+        - Key: team
+          Value: team-B
 
   VPCFlowLogsRole:
     Type: 'AWS::IAM::Role'
