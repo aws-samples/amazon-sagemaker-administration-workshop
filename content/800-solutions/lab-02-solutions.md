@@ -1,10 +1,10 @@
 # Solutions for the assignments in the lab 2
 These are the solution for the assignments in the lab 2.
 
-## Solution for the assignment 02-01
+## Solution for the assignment 02-01
 > Implement tag-based data access control following the blog post [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/).
 
-## Solution for the Assignment 02-02
+## Solution for the Assignment 02-02
 > Implement tag-based access control to SageMaker resources following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
 
 This sample solution implements resource isolation for user profiles using resource tags. We're going to control access to SageMaker processing and training jobs based on the project membership and the tags attached to the user profile execution roles.
@@ -174,7 +174,6 @@ The full policy is the following:
 ```
 
 Now you must attach this policy to the both user profile's execution roles.
-
 
 Attach the policy to the execution role of the user `user1-data-scientist`:
 ```sh
