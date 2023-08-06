@@ -8,7 +8,7 @@ This lab shows how to protect data in your ML environment.
 In this lab you're going to do:
 - Protect data at rest using encryption with AWS Key Management Service (KMS)
 - Protect data in transit using encryption
-- Implement role-based (RBAC) and attribute-based access control (ABAC)
+- Implement role-based (RBAC) and attribute-based access control (ABAC) to data
 - Implement S3 access control using IAM policies, VPC endpoints, and VPC endpoint policies
 - Control access to SageMaker resources by using tags
 
@@ -277,6 +277,7 @@ The general idea of the ABAC/TBAC is that the data access is only allowed when t
 💡 **Assignment 02-01**: 
 - Implement tag-based data access control following the blog post [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/).
 
+For a possible solution see [instructions](../800-solutions/lab-02-solutions.md) in the **Solutions** section of the workshop.
 
 ## Step 3: implement data perimeter
 In this step you're going to implement a data perimeter for an S3 bucket. You're going to allow access to a designated bucket via a designated S3 VPC endpoint:
@@ -424,42 +425,36 @@ You can control access to datasets with [Amazon S3 access points](https://docs.a
 Consider [access points restrictions and limitations](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-restrictions-limitations.html)
 
 ## Step 4: implement resource isolation using tags
-Following the same TBAC principle, you can implement access control and isolation for SageMaker resources, such as Studio, SagaMaker jobs, projects, model registry, and pipelines.
+Extending the same TBAC principle to other resources, you can implement access control and isolation for SageMaker taggable resources, such as Studio, SagaMaker jobs, projects, model registry, and pipelines.
 
 💡 **Assignment 02-02**: 
-- Implement tag-based access control to SageMaker resources following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
+- Implement tag-based access control to SageMaker resources following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide. For a foundational guidance on the tag-based isolation refer to [Controlling access to and for IAM users and roles using tags](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_iam-tags.html) documentation.
 
 For a possible solution see [instructions](../800-solutions/lab-02-solutions.md) in the **Solutions** section of the workshop.
 
 ### SageMaker multi-domain setup
-TBD
+SageMaker supports multiple domains within the same AWS Region and AWS account since November 30 2022. All resources created within the domain are automatically tagged with the domain and user profile ARNs:
+```
+{'Key': 'sagemaker:user-profile-arn',
+ 'Value': 'arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:user-profile/<DOMAIN-ID>/<PROFILE-NAME>'},
+{'Key': 'sagemaker:domain-arn',
+ 'Value': 'arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:domain/<DOMAIN-ID>'}
+```
+
+You can use these tags for cost allocation, resource isolation, logging, monitoring, and access control.
+Refer to the [multiple domains](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-multiple.html) documentation in the Developer Guide for more details and examples.
 
 ### Resource isolation for multi-domain
 
 💡 **Assignment 02-03**: 
-- Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
+- Implement resource isolation between domains in the same AWS Account based on the automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
-You can use the following sample `Deny` policy:
+You can also experiment with the following sample `Deny`-only policy to allow access to the domain-owned resources only:
 
 ```json
 {
     "Version": "2012-10-17",
     "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "SageMaker:Create*",
-                "SageMaker:Update*"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "ForAllValues:StringEquals": {
-                    "aws:TagKeys": [
-                        "sagemaker:domain-arn"
-                    ]
-                }
-            }
-        },
         {
             "Effect": "Deny",
             "Action": [
@@ -469,14 +464,21 @@ You can use the following sample `Deny` policy:
             ],
             "Resource": "*",
             "Condition": {
-                "StringNotLikeIfExists": {
-                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:us-east-1:<ACCOUNT-ID>:domain/<DOMAIN-ID>"
+                "StringNotEqualsIfExists": {
+                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:domain/<DOMAIN-ID>"
                 }
             }
         }
     ]
 }
 ```
+
+For the detailed instructions refer to the **Solutions** section of the workshop.
+
+### Implement multi-tenancy with multi-account and multi-domain
+You can implement multi-tenancy for teams, users, and MLaaS tenants using multi-account, multi-domain, or hybrid approach. The best fits depends on your requirements for resource isolation, cost control and allocation, infrastructure sharing, collaboration between tenants, quota usage, and authentication and authorization constraints.
+
+If you'd like to understand the difference and use cases for multi-tenancy using these approaches approaches, refer to the [comparison](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html) in SageMaker Studio Administration Best Practices.
 
 ## Conclusion
 In this lab you learned how you can protect your data using three foundational approaches: encryption, data access control, and data perimeter.

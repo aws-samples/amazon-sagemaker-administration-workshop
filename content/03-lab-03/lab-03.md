@@ -118,9 +118,9 @@ For example, the following condition keys might be useful to limit and enforce u
 
 Very often you use the following global condition keys to implement tag-based (ABAC) resource access control:
 
-- `aws:RequestTag/${TagKey}` - Enforce matching of a specific tag key-value pari in a SageMaker API call
-- `aws:ResourceTag/${TagKey}` - Enforce matching of a specific tag key-value pair in a SageMaker resource
-- `aws:TagKeys `- Enforce use of specific tag keys in a SageMaker API call
+- `aws:RequestTag/${TagKey}` - Enforce matching of a specific tag key-value pair in an API call
+- `aws:ResourceTag/${TagKey}` - Enforce matching of a specific tag key-value pair in a resource
+- `aws:TagKeys `- Enforce use of specific tag keys in an API call
 
 Check the [list of SageMaker actions and supported IAM condition keys](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html) to see which SageMaker action support which condition keys.
 

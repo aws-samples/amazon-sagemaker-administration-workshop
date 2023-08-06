@@ -18,6 +18,10 @@ Outputs:
     Description: The ARN of the SageMaker MLOps execution role
     Value: !GetAtt StudioRoleMLOps.Arn
 
+  StudioRoleMultiDomainArn:
+    Description: The ARN of the SageMaker multi-domain execution role
+    Value: !GetAtt StudioRoleMultiDomain.Arn
+
   VPCFlowLogsRoleArn:
     Description: The ARN of the VPC Flow Logs role
     Value: !GetAtt VPCFlowLogsRole.Arn
@@ -85,24 +89,6 @@ Resources:
             Resource:
               - !Sub 'arn:aws:sagemaker:*:${AWS::AccountId}:*' 
             Effect: Allow
-          - Sid: AmazonSageMakerEC2ReadOnlyPolicy
-            Action:
-              - ec2:DescribeDhcpOptions
-              - ec2:DescribeNetworkInterfaces
-              - ec2:DescribeRouteTables
-              - ec2:DescribeSecurityGroups
-              - ec2:DescribeSubnets
-              - ec2:DescribeVpcEndpoints
-              - ec2:DescribeVpcs
-            Resource:
-              - '*'
-            Effect: Allow
-          - Sid: AmazonSageMakerIAMReadOnlyPolicy
-            Action:
-              - iam:ListRoles
-            Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:*'
-            Effect: Allow
 
   SageMakerAccessSupportingServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -169,6 +155,24 @@ Resources:
               - logs:UpdateLogDelivery
             Resource:
               - '*'
+            Effect: Allow
+          - Sid: AmazonSageMakerEC2ReadOnlyPolicy
+            Action:
+              - ec2:DescribeDhcpOptions
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeRouteTables
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeVpcEndpoints
+              - ec2:DescribeVpcs
+            Resource:
+              - '*'
+            Effect: Allow
+          - Sid: AmazonSageMakerIAMReadOnlyPolicy
+            Action:
+              - iam:ListRoles
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:*'
             Effect: Allow
 
   SageMakerStudioDeveloperAccessPolicy:
@@ -756,6 +760,30 @@ Resources:
           Value: mlops
         - Key: team
           Value: team-B
+  
+  StudioRoleMultiDomain:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref SageMakerAccessSupportingServicesPolicy
+        - !Ref SageMakerDeniedServicesPolicy
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
+        - Key: role-type
+          Value: multi-domain
+        - Key: team
+          Value: team-A
 
   VPCFlowLogsRole:
     Type: 'AWS::IAM::Role'

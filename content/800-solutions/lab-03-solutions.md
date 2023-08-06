@@ -13,3 +13,8 @@ These are the solution for the assignments in the lab 3.
 
 ## Solution for the assignment 03-04
 > Configure Amazon Security Hub and explore what [specific Amazon SageMaker controls](https://docs.aws.amazon.com/securityhub/latest/userguide/sagemaker-controls.html) it offers.
+
+---
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: MIT-0

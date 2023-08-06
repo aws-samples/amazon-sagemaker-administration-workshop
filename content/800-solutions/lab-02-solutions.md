@@ -4,7 +4,7 @@ These are the solution for the assignments in the lab 2.
 ## Solution for the assignment 02-01
 > Implement tag-based data access control following the blog post [Configuring Amazon SageMaker Studio for teams and groups with complete resource isolation](https://aws.amazon.com/fr/blogs/machine-learning/configuring-amazon-sagemaker-studio-for-teams-and-groups-with-complete-resource-isolation/).
 
-## Solution for the Assignment 02-02
+## Solution for the assignment 02-02
 > Implement tag-based access control to SageMaker resources following the [example](https://docs.aws.amazon.com/sagemaker/latest/dg/security_iam_id-based-policy-examples.html#access-tag-policy) in the Developer Guide.
 
 This sample solution implements resource isolation for user profiles using resource tags. We're going to control access to SageMaker processing and training jobs based on the project membership and the tags attached to the user profile execution roles.
@@ -18,7 +18,7 @@ We simulate the following setup:
 - Team B users:
     - `user2-mlops`: the user profile is created in the lab 1
 
-The user profiles for these users have different execution roles. Each role is tagged with a tag `team` with the key `Team-A` or `Team-B`.
+The user profiles for these users have different execution roles. Each role is tagged with a tag `team` key with the value `Team-A` or `Team-B`.
 
 ### See user profile execution role tags
 We're going to use AWS CLI in the terminal to run the following commands. You can also use AWS Console UX or Python SDK boto3.
@@ -104,7 +104,7 @@ The full policy is the following:
                 "sagemaker:DeleteTags"
             ],
             "Resource": [
-                "arn:aws:sagemaker:*:949335012047:*"
+                "arn:aws:sagemaker:*:<ACCOUNT-ID>:*"
             ],
             "Effect": "Deny",
             "Sid": "DenyAddDeleteTagsIfTagExists"
@@ -126,7 +126,7 @@ The full policy is the following:
                 "sagemaker:CreateTrainingJob"
             ],
             "Resource": [
-                "arn:aws:sagemaker:*:949335012047:*"
+                "arn:aws:sagemaker:*:<ACCOUNT-ID>:*"
             ],
             "Effect": "Deny",
             "Sid": "DenyActionForUnintendedValue"
@@ -142,7 +142,7 @@ The full policy is the following:
                 "sagemaker:CreateTrainingJob"
             ],
             "Resource": [
-                "arn:aws:sagemaker:*:949335012047:*"
+                "arn:aws:sagemaker:*:<ACCOUNT-ID>:*"
             ],
             "Effect": "Deny",
             "Sid": "DenyIfNoTags"
@@ -164,7 +164,7 @@ The full policy is the following:
                 "sagemaker:DescribeTrainingJob"
             ],
             "Resource": [
-                "arn:aws:sagemaker:*:949335012047:*"
+                "arn:aws:sagemaker:*:<ACCOUNT-ID>:*"
             ],
             "Effect": "Deny",
             "Sid": "DenyIfNoTagMatch"
@@ -197,7 +197,31 @@ aws iam attach-role-policy \
     --policy-arn <POLICY-ARN>
 ```
 
-With the same permission policy attached to the both execution roles, you can start experimenting with the resource isolation. Navigate to the notebook [`02-lab-02.ipynb`](../../notebooks/02-lab-02.ipynb) and follow the instructions in the **Resource isolation using tags** section.
+### Experiments
+With the same permission policy attached to the **both execution roles**, you can start experimenting with the resource isolation. Navigate to the notebook [`02-lab-02.ipynb`](../../notebooks/02-lab-02.ipynb) and follow the instructions in the **Resource isolation using tags** section.
 
-## Solution for the Assignment 02-03
-> Implement resource isolation based on automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
+### Clean up
+After you finish experimentation, remove the resource-isolation policy from the user profile execution roles:
+```sh
+aws iam detach-role-policy \
+    --role-name <DATA-SCIENCE-EXECUTION-ROLE-NAME> \
+    --policy-arn <POLICY-ARN>
+
+aws iam detach-role-policy \
+    --role-name <MLOPS-EXECUTION-ROLE-NAME> \
+    --policy-arn <POLICY-ARN>
+```
+
+### Limitations of TBAC in SageMaker context
+❗ You can use tags and access control based on tags only with resources and APIs which support tags. Some SageMaker resources, such as pipeline executions, image versions cannot be tagged. You cannot control access to these resources with TBAC. All SageMaker `List*` API doesn't support tag-based resource isolation. Even if a user isn't allowed to access resource details using `Describe*` API, the user is still able to list not-owned resources using by calling `List*` via AWS CLI or SageMaker API.
+
+## Solution for the assignment 02-03
+> Implement resource isolation between domains in the same AWS Account based on the automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
+
+To experiment with tag-based domain isolation you need at least two domains. One domain you created in the lab 1. If you completed the [onboarding to the SageMaker domain in IAM Identity Center mode](../01-lab-01/domain-sso.md), you have the second domain. Otherwise follow the instructions in the section [Step 4: onboard to SageMaker domain](../01-lab-01/lab-01.md#step-4-onboard-to-sagemaker-domain) of the lab 1.
+
+
+---
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: MIT-0

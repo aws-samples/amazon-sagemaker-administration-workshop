@@ -347,7 +347,7 @@ AWS CloudFormation offers several resources to provision SageMaker domain via te
 Refer to a [template sample](https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/cfn-templates/sagemaker-domain.yaml) for a working example of CloudFormation-based provisioning of the domain.
 
 ### Onboard to domain using IAM Identity Center
-If you'd like to learn how to onboard to domain in IAM Identity Center authentication mode, you can complete the dedicated step-by-step [instructions](./domain-sso.md).
+If you'd like to learn how to onboard to domain in IAM Identity Center authentication mode, you can complete the dedicated sub-lab by following [these step-by-step instructions](./domain-sso.md).
 
 ## Step 5: create user profiles
 To use Studio you need to add user profiles to the domain. In this section your create two user profiles for data scientist and MLOps engineer role users.
@@ -596,7 +596,7 @@ For the majority of the use cases the implementation of DPoP is not justified an
 ### Sign in to Studio from the AWS IAM Identity Center
 Each user signs in to their Studio environment via a presigned URL from an AWS IAM Identity Center access portal without the need to go to the console in their AWS account. The AWS access portal calls `CreatePresignedDomainUrl` automatically under the hood when a user federates in the Studio. Your can also create a custom profile management backend using the same API call [`CreatePresignedDomainUrl`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreatePresignedDomainUrl.html) to generate a _presigned URL_ for the user based on your own authorization and authentication logic.
 
-If you would like to understand how to use IAM Identity Center to manage users and user profile, refer to the [Domain in IAM Identity Center mode](./domain-sso.md) lab.
+If you would like to understand how to use IAM Identity Center to manage users and user profile, refer to the [Domain in IAM Identity Center mode](./domain-sso.md) section of the lab.
 
 ## Step 7: control user permissions with IAM identity-based policies
 In addition to Studio access controls via IAM policy conditions, you can manage user permissions for API and resources via the IAM execution roles.
@@ -648,16 +648,21 @@ Navigate to the Studio File Browser and then open the `01-lab-01.ipynb` notebook
 After you finished playing with the notebook using Data Scientist user profile, close the Studio and launch it again using the MLOps profile. The user profile execution role for MLOps has a different set of permissions. You can experiment in the notebook which API calls you can access in the role of an MLOps engineer. 
 
 ### Prevent a permission escalation attempt
-This experiment demonstrates the importance of a proper permission setup for IAM PassRole.
+This optional experiment demonstrates the importance of a proper permission setup for IAM `PassRole`.
 
-TBD: demonstrate the permission escalation use case with passing a high privilege role via a low-privilege role without a proper `iam:PassRole` permission setup. 
-1. Have a high privilege role, for example S3:* for any S3 bucket
+💡 **Assignment 01-01**: 
+- Demonstrate a permission escalation use case where a low-privilege role can pass execution to a high-privilege role because of incorrect `iam:PassRole` permission setup.
+
+One of the possible flows to implement the experiment is the following:
+1. Have a high privilege role, for example `S3:*` for any S3 bucket
 2. Create a Studio notebook which reads from an S3 bucket which cannot be accessed by the user profile execution role. The same notebooks outputs the data in the cell. 
-3. The read operation from the restricted S3 bucket fails in the notebook, because the execution role doesn't have read permission for this S3 bucket
-4. Create a notebook job and specify the high privilege role to run the job
-5. Run the job. The job succeeded because the job execution role has the needed permissions
-6. Open the job output notebook and see the data dump in the output -> Permission escalation
-7. Fix the issue with using a proper `iam:PassRole` configuration
+3. If you run the notebook in Studio under the user profile execution role, the read operation for the restricted S3 bucket fails in the notebook, because the execution role doesn't have read permission for this S3 bucket.
+4. Create a [notebook job](https://docs.aws.amazon.com/sagemaker/latest/dg/notebook-auto-run.html) and specify the high privilege role as the job execution role. This requires `iam:PassRole` permission for the user profile execution role which creates the notebook job.
+5. Run the notebook job. The job succeeded because the job execution role has the needed permissions
+6. Open the notebook job output notebook and see the data dump in the output. So you were able to demonstrate the escalation of permissions.
+7. Fix the issue with using a proper `iam:PassRole` configuration.
+
+For a full solution see [instructions](../800-solutions/lab-01-solutions.md) in the **Solutions** section of the workshop.
 
 ## Step 8: control network traffic for Studio notebooks
 This section shows how to deal with network connectivity and to control your VPC traffic with common AWS network controls.
