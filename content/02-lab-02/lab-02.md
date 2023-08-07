@@ -449,33 +449,9 @@ Refer to the [multiple domains](https://docs.aws.amazon.com/sagemaker/latest/dg/
 💡 **Assignment 02-03**: 
 - Implement resource isolation between domains in the same AWS Account based on the automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
-You can also experiment with the following sample `Deny`-only policy to allow access to the domain-owned resources only:
+For a possible solution and detailed instructions refer to the **Solutions** section of the workshop.
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Deny",
-            "Action": [
-                "SageMaker:Update*",
-                "SageMaker:Delete*",
-                "SageMaker:Describe*"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringNotEqualsIfExists": {
-                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:domain/<DOMAIN-ID>"
-                }
-            }
-        }
-    ]
-}
-```
-
-For the detailed instructions refer to the **Solutions** section of the workshop.
-
-### Implement multi-tenancy with multi-account and multi-domain
+### Implement multi-tenancy with multi-account and multi-domain
 You can implement multi-tenancy for teams, users, and MLaaS tenants using multi-account, multi-domain, or hybrid approach. The best fits depends on your requirements for resource isolation, cost control and allocation, infrastructure sharing, collaboration between tenants, quota usage, and authentication and authorization constraints.
 
 If you'd like to understand the difference and use cases for multi-tenancy using these approaches approaches, refer to the [comparison](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html) in SageMaker Studio Administration Best Practices.

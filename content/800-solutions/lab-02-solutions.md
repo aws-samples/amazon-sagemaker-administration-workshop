@@ -215,11 +215,138 @@ aws iam detach-role-policy \
 ### Limitations of TBAC in SageMaker context
 ❗ You can use tags and access control based on tags only with resources and APIs which support tags. Some SageMaker resources, such as pipeline executions, image versions cannot be tagged. You cannot control access to these resources with TBAC. All SageMaker `List*` API doesn't support tag-based resource isolation. Even if a user isn't allowed to access resource details using `Describe*` API, the user is still able to list not-owned resources using by calling `List*` via AWS CLI or SageMaker API.
 
-## Solution for the assignment 02-03
+## Solution for the assignment 02-03
 > Implement resource isolation between domains in the same AWS Account based on the automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
-To experiment with tag-based domain isolation you need at least two domains. One domain you created in the lab 1. If you completed the [onboarding to the SageMaker domain in IAM Identity Center mode](../01-lab-01/domain-sso.md), you have the second domain. Otherwise follow the instructions in the section [Step 4: onboard to SageMaker domain](../01-lab-01/lab-01.md#step-4-onboard-to-sagemaker-domain) of the lab 1.
+To experiment with tag-based domain isolation you need at least two domains. One domain you created in the lab 1. Follow the instructions in the section [Step 4: onboard to SageMaker domain](../01-lab-01/lab-01.md#step-4-onboard-to-sagemaker-domain) of the lab 1 to create the second domain. Use the same VPC and subnet configuration for the new domain.
 
+Wait until the creation of the domain is completed.
+
+### Setup environment
+You need to create a new user profile in the second domain. You're going to attach a resource-isolation permission policy to the user profile execution role.
+
+#### Create a user profile
+You can create a new user profile using AWS Console or AWS CLI. 
+
+##### AWS Console
+For the UX-based creation, sign in the AWS account and navigate to the second domain you've just created. 
+
+Choose **Add user** on the **Domain details** pane. Select the execution role equal to the value of the IAM stack parameter `StudioRoleMultiDomainArn`:
+
+![](../../static/img/create-user-profile-multi-domain.png)
+
+Choose **Next**. Keep **Studio settings** and **RStudio settings** default and **disable** all configurations in **Amazon SageMaker Canvas settings**:
+
+![](../../static/img/disable-canvas-settings.png)
+
+Wait until the user profile created.
+
+##### AWS CLI
+Alternatively you can create a new user profile via AWS CLI using the following command:
+
+```sh
+aws sagemaker create-user-profile \
+    --domain-id <DOMAIN-ID> \
+    --user-profile-name user1 \
+    --user-settings '{"ExecutionRole":"<STUDIOROLE-MULTIDOMAIN-ARN>"}'
+```
+
+#### Assign a resource isolation permission policy
+Now you assign the resource isolation permission policy to the user profile execution role.
+
+Navigate to the [AWS IAM console](https://us-east-1.console.aws.amazon.com/iamv2/home#/roles), find the `StudioRoleMultiDomain` execution role and add the following inline permission policy to the execution role:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CreateAPIs",
+            "Effect": "Allow",
+            "Action": "sagemaker:Create*",
+            "NotResource": [
+                "arn:aws:sagemaker:*:*:domain/*",
+                "arn:aws:sagemaker:*:*:user-profile/*",
+                "arn:aws:sagemaker:*:*:space/*"
+            ]
+        },
+        {
+            "Sid": "ResourceAccessRequireDomainTag",
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker:Update*",
+                "sagemaker:Delete*",
+                "sagemaker:Describe*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:ResourceTag/sagemaker:domain-arn": "<DOMAIN-ARN>"
+                }
+            }
+        },
+        {
+            "Sid": "AllowActionsThatDontSupportTagging",
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker:DescribeImageVersion",
+                "sagemaker:UpdateImageVersion",
+                "sagemaker:DeleteImageVersion",
+                "sagemaker:DescribeModelCardExportJob",
+                "sagemaker:DescribeAction"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ListAPIs",
+            "Action": "sagemaker:List*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "DeleteDefaultApp",
+            "Effect": "Allow",
+            "Action": "sagemaker:DeleteApp",
+            "Resource": "arn:aws:sagemaker:*:*:app/<DOMAIN-ID>/*/jupyterserver/default"
+        }
+    ]
+}
+```
+
+Replace `<DOMAIN-ARN>` and `<DOMAIN-ID>` with the domain ARN and domain id of the domain you've just created. 
+
+You can execute the following CLI command to get the domain arn:
+```sh
+aws sagemaker describe-domain --domain-id=<DOMAIN-ID>
+```
+
+### Experiments
+After you created the second domain, the user profile and attached the permission policy to the user profile execution role, sign in Studio **in the first domain** under any user profile. Navigate to the notebook [`02-lab-02.ipynb`](../../notebooks/02-lab-02.ipynb) and follow the instructions in the **Multi-domain resource isolation** section.
+
+You can also experiment with the following sample `Deny`-only policy to allow access to the domain-owned resources only:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": [
+                "SageMaker:Update*",
+                "SageMaker:Delete*",
+                "SageMaker:Describe*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEqualsIfExists": {
+                    "aws:ResourceTag/sagemaker:domain-arn": "arn:aws:sagemaker:<REGION>:<ACCOUNT-ID>:domain/<DOMAIN-ID>"
+                }
+            }
+        }
+    ]
+}
+```
+
+This policy implements a stronger isolation by denying access to any resource without `sagemaker:domain-arn` tag or with the tag value which isn't equal to the current domain arn.
 
 ---
 

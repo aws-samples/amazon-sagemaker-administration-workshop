@@ -1,7 +1,7 @@
 # Solutions for the assignments in the lab 1
 These are the solution for the assignments in the lab 1
 
-## Solution for the assignment 01-01
+## Solution for the assignment 01-01
 > Demonstrate a permission escalation use case where a low-privilege role can pass execution to a high-privilege role because of incorrect `iam:PassRole` permission setup.
 
 We're going to implement the following demonstration of the permission escalation which exploits incorrect `iam:PassRole` permission setup:

@@ -19,7 +19,7 @@ Outputs:
     Value: !GetAtt StudioRoleMLOps.Arn
 
   StudioRoleMultiDomainArn:
-    Description: The ARN of the SageMaker multi-domain execution role
+    Description: The ARN of the SageMaker multi-domain resource isolation execution role
     Value: !GetAtt StudioRoleMultiDomain.Arn
 
   VPCFlowLogsRoleArn:
@@ -626,7 +626,7 @@ Resources:
   SageMakerTagBasedResourceIsolationPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Description: Permission policy for tab-based access control
+      Description: Permission policy for tag-based access control
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -706,6 +706,30 @@ Resources:
         - Key: project
           Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
 
+  StudioRoleMultiDomain:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Ref SageMakerAccessSupportingServicesPolicy
+        - !Ref SageMakerDeniedServicesPolicy
+      Tags:
+        - Key: project
+          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
+        - Key: role-type
+          Value: multi-domain
+        - Key: team
+          Value: team-A
+          
   StudioRoleDataScience:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -761,30 +785,6 @@ Resources:
         - Key: team
           Value: team-B
   
-  StudioRoleMultiDomain:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - sagemaker.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: /
-      ManagedPolicyArns:
-        - !Ref SageMakerAccessSupportingServicesPolicy
-        - !Ref SageMakerDeniedServicesPolicy
-      Tags:
-        - Key: project
-          Value: !Sub sagemaker-admin-workshop:${AWS::Region}:${AWS::AccountId}
-        - Key: role-type
-          Value: multi-domain
-        - Key: team
-          Value: team-A
-
   VPCFlowLogsRole:
     Type: 'AWS::IAM::Role'
     Properties:
