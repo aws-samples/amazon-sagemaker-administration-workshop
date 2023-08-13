@@ -15,20 +15,59 @@ In this lab you're going to do:
 
 ### Monitoring with CloudWatch
 By default, SageMaker publish activities like notebook usage, job metrics, endpoint serving metrics to CloudWatch logs. SageMaker uses the following log groups:
-- `/aws/sagemaker/studio`: Studio logs, each user profile and app has their own stream under this group:
-    - `/aws/sagemaker/studio/<USER-PROFILE-NAME>/JupyterServer/default`: JupyterServer logs
-    - `/aws/sagemaker/studio/<USER-PROFILE-NAME>/JupyterServer/default/LifecycleConfigOnStart`: lifecycle script logs
+- `/aws/sagemaker/studio`: Studio logs, each domain, user profile, and app has their own stream under this group:
+    - `/aws/sagemaker/studio/<DOMAIN-ID>/<USER-PROFILE-NAME>/JupyterServer/default`: JupyterServer logs
+    - `/aws/sagemaker/studio/<DOMAIN-ID>/<USER-PROFILE-NAME>/JupyterServer/default/LifecycleConfigOnStart`: lifecycle script logs
     - `/aws/sagemaker/studio/<USER-PROFILE-NAME>/KernelGateway/datascience-app`: KernelGateway app logs
 - `/aws/sagemaker/TrainingJobs`: Training job logs
 - `/aws/sagemaker/ProcessingJobs`: Processing job logs
 
-You can configure alarms for specified thresholds or messages in the logs, and publish events for user notification and automated event-based workflows.
+Navigate to [CloudWatch console](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups$3FlogGroupNameFilter$3D$252Faws$252Fsagemaker$252F) and see all `/aws/sagemaker` log groups in your AWS account:
+
+![](../../static/img/sagemaker-log-groups.png)
+
+Browse the log streams and log messages inside any of the SageMaker log groups. 
+
+You can use these CloudWatch logs and events for implementing observability and automation in ML workloads, for example configure alarms for specified thresholds or messages in the logs, publish events for user notification, and automate with event-based workflows.
 
 Refer to the [Monitor Amazon SageMaker with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html) and [Log Amazon SageMaker Events with Amazon CloudWatch](https://docs.aws.amazon.com/sagemaker/latest/dg/logging-cloudwatch.html) in the Developer Guide for more details and supported event types.
 
-Navigate to CloudWatch console in your account and open `/aws/sagemaker/studio` log group. Browse the log streams and log messages inside this group. 
+The log group `/aws/sagemaker/studio` is an important tool to troubleshoot any issues with Studio or apps, for example network connectivity problems.
 
-This log group is important tool to troubleshoot any issues with Studio or apps, for example network connectivity problems.
+💡 **Exercise**:
+Open the `03-lab-03.ipynb` notebook in Studio and complete the **SageMaker CloudWatch logs** part of the **Logging and monitoring** section.
+
+### Isolation of CloudWatch logs for multi-domain setup
+You can control access to the SageMaker logs in CloudWatch by using IAM identity-based permission policies in user profile execution roles. For example, you can allow access only to the own domain logs for all user profiles in one domain and deny access to any other log events.
+
+The following permission policy explicitly denies access to all log events which are not stored in the domain-specific log stream within the SageMaker log groups:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyNotOwnedDomainLogs",
+            "Effect": "Deny",
+            "Action": [
+                "logs:GetLogEvents"
+            ],
+            "NotResource": [
+                "arn:aws:logs:*:<ACCOUNT-ID>:log-group:/aws/sagemaker/*:log-stream:<DOMAIN-ID>*"
+            ]
+        }
+    ]
+}
+```
+
+To have access to the SageMaker job logs, all domain users must use the job name started with the `<DOMAIN-ID>`. Access to Studio logs works already by default, because studio logs are written to the `<DOMAN-ID>/<USER-PROFILE-NAME>/...` log stream.
+
+To access any other CloudWatch log groups and streams, you need to adjust the IAM permission policy, for example use `Allow` policy and explicitly specify log stream names, also with `<DOMAIN-ID>` prefix.
+
+You can use a different domain-unique prefix to limit access to owned logs only based on your own naming convention.
+
+💡 **Exercise**:
+Now complete the **Isolation of CloudWatch logs for multi-domain setup** part of the **Logging and monitoring** section of the `03-lab-03.ipynb` notebook.
 
 ### Logging with CloudTrail
 CloudTrail is enabled by default for your AWS account. You can use **Event history** in the CloudTrail console to view, search, download, archive, analyze, and respond to account activity across your AWS infrastructure. This includes activity made through the AWS Management Console, AWS Command Line Interface, and AWS SDKs and APIs.
@@ -89,6 +128,7 @@ Navigate to the CloudTrail event history and validate that you can view the user
 ![](../../static/img/cloudtrail-event-record-source-identity.png)
 
 ### Configure Amazon S3 server access logging
+TBD
 
 ## Step 2: security controls
 

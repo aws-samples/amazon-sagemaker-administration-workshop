@@ -89,7 +89,7 @@ In the following sections you're going to assign these groups and users to the S
 ## Manage SageMaker user profiles
 In the domain in IAM Identity Center authentication mode, each user is mapped to one and only one user profile. The domain can _automatically_ create a user profile when an entitled user federates in the Studio first time or a particular IAM Identity Center user assigned to the domain in the AWS Console UX.
 
-The domain uses the default execution role as the user profile execution role. If you'd like to assign a specific execution role to the user profile or configure other user profile-specific settings, you need to update the user profile using [`UpdateUserProfile`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_UpdateUserProfile.html) API call.
+The domain uses the default execution role defined at the domain level as the user profile execution role. If you'd like to assign a specific execution role to the user profile or configure other user profile-specific settings, you need to update the user profile using [`UpdateUserProfile`](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_UpdateUserProfile.html) API call.
 
 ### Create user profile
 There are following methods to add a new user to domain:
@@ -117,12 +117,12 @@ This approach is static as everything must be provisioned up-front, including us
 Use this pattern if your user base is rather static or slowly changing and you don't need to update user profile often. This pattern is a good fit for smaller teams and simple organizational setup without many SageMaker domains in use.
 
 #### Pattern 2: Create and configure user profiles on user sign-in
-Implement a [custom SAML 2.0 application](https://docs.aws.amazon.com/singlesignon/latest/userguide/samlapps.html) in IAM Identity Center or use a custom API with any IdP to control user federation into the SageMaker domain. For example, refer to [SageMaker Studio access using SAML assertion](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html#sagemaker-studio-access-using-saml) for the implementation details. 
+Implement a [custom SAML 2.0 application](https://docs.aws.amazon.com/singlesignon/latest/userguide/samlapps.html) in IAM Identity Center or use a custom API with any IdP to control user federation into the SageMaker domain. For example, refer to [SageMaker Studio access using SAML assertion](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/appendix.html#sagemaker-studio-access-using-saml) for the implementation details. The SageMaker domain must be in IAM authentication mode.
 
 With this approach you don't need to create user profiles in the domain up-front or assign users or groups to the domain. You need to implement a sign-in process including user identity validation and authorization. With this full flexibility you can support complex team and organizational setups, including multi-team and multi-domain. By controlling the user sign-in process you can implement one user to many user profile pattern.
 
 #### Pattern 3: Configure user profiles on `CreateApp` event
-After a user federated into the domain and profile is created automatically, call an AWS Lambda function and configure the profile ex post, for example set the profile execution role. 
+After a user signed into the domain from AWS access portal and profile is created automatically, call an AWS Lambda function and configure the profile ex post, for example set the profile execution role. 
 
 For example, you can configure an Amazon EventBridge rule with the event pattern:
 ```json

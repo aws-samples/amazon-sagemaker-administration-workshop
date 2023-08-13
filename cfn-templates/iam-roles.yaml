@@ -729,7 +729,7 @@ Resources:
           Value: multi-domain
         - Key: team
           Value: team-A
-          
+
   StudioRoleDataScience:
     Type: 'AWS::IAM::Role'
     Properties:

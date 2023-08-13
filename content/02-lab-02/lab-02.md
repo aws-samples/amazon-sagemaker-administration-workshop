@@ -449,7 +449,7 @@ Refer to the [multiple domains](https://docs.aws.amazon.com/sagemaker/latest/dg/
 💡 **Assignment 02-03**: 
 - Implement resource isolation between domains in the same AWS Account based on the automated SageMaker tags as described in [Domain resource isolation](https://docs.aws.amazon.com/sagemaker/latest/dg/domain-resource-isolation.html). 
 
-For a possible solution and detailed instructions refer to the **Solutions** section of the workshop.
+For a possible solution and detailed [instructions](../800-solutions/lab-02-solutions.md) refer to the **Solutions** section of the workshop.
 
 ### Implement multi-tenancy with multi-account and multi-domain
 You can implement multi-tenancy for teams, users, and MLaaS tenants using multi-account, multi-domain, or hybrid approach. The best fits depends on your requirements for resource isolation, cost control and allocation, infrastructure sharing, collaboration between tenants, quota usage, and authentication and authorization constraints.
