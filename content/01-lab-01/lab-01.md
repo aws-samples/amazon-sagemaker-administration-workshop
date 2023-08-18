@@ -555,7 +555,7 @@ Secondly, change the inline permission policy you added to your IAM role to the 
             "Resource": "*",
             "Condition": {
                 "NotIpAddress": {
-                    "aws:SourceIp": "<YOUR PUBLIC IP ADDRESS"
+                    "aws:SourceIp": "<YOUR PUBLIC IP ADDRESS>"
                 }
             }
         }
@@ -759,7 +759,7 @@ git clone https://github.com/aws-samples/amazon-sagemaker-administration-worksho
 
 The code repository will be downloaded and saved in your home directory in Studio.
 
-Navigate to the Studio file browser and open `amazon-sagemaker-administration-workshop` folder, then open `notebooks` folder. Open and run the `01-lab-01.ipnyb` notebook.
+Navigate to the Studio file browser and open `amazon-sagemaker-administration-workshop` folder, then open `notebooks` folder. Open and run the `01-lab-02.ipnyb` notebook.
 
 ### Control traffic with AWS Network Firewall
 Depending on your security, compliance, and governance rules, you may not need to or cannot completely block internet access from Studio and your ML workloads. You may have requirements beyond the scope of network security controls implemented by security groups and network access control lists (ACLs), such as application protocol protection, deep packet inspection, domain name filtering, and intrusion prevention system (IPS). Your network traffic controls may also require many more rules compared to what is currently supported in security groups and network ACLs. In these scenarios, you can use [AWS Network Firewall](https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewalls.html) - a managed network firewall and IPS for your VPC.
