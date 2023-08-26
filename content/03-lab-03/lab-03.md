@@ -85,7 +85,7 @@ API calls that SageMaker instances, such as processing or training jobs, make on
 Open the `03-lab-03.ipnyb` notebook in the Studio and call some SageMaker API to generate CloudTrail entries. Move to the next section to see the log entries and to enable user source identity for the logs.
 
 #### Enable `sourceIdentity` configuration for the domain
-AWS CloudTrail logs for resource access and API class from a Studio user profile contain only the Studio execution role as the user identity. 
+AWS CloudTrail logs for resource access and API calls from a Studio user profile contain only the Studio execution role as the user identity. 
 
 Navigate to the AWS CloudTrail console and [view the CloudTrail event history](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/view-cloudtrail-events.html). Filter events by **Event source**=`sagemaker.amazonaws.com` and **User name**=`SageMaker`. These events are originating from the operations performed by a user profile in the Studio. Open any of these events. The CloudTrail event contains the name of the user execution role as `userName` within the `userIdentity` object:
 
@@ -120,7 +120,7 @@ aws sagemaker update-domain \
     --domain-id <DOMAIN-ID> \
     --domain-settings-for-update "ExecutionRoleIdentityConfig=USER_PROFILE_NAME"
 ```
-4. Sign in to Studio via one of the user profiles. After approx. 5 min the JupyterServer app is created and the Studio UX comes up.
+4. Sign in to Studio via one of the user profiles. After approx. 3 min the JupyterServer app is created and the Studio UX comes up.
 
 Now you can call some API from the Studio notebook, for example `DescribeDomain`. 
 Navigate to the CloudTrail event history and validate that you can view the user profile in the log entry for the service accessed. The user profile is given as the `sourceIdentity` value in the `userIdentity` section:
@@ -158,8 +158,9 @@ For example, the following condition keys might be useful to limit and enforce u
 
 Very often you use the following global condition keys to implement tag-based (ABAC) resource access control:
 
-- `aws:RequestTag/${TagKey}` - Enforce matching of a specific tag key-value pair in an API call
-- `aws:ResourceTag/${TagKey}` - Enforce matching of a specific tag key-value pair in a resource
+- `aws:RequestTag/tag-key` - Enforce matching of a specific tag key-value pair in an API call
+- `aws:ResourceTag/tag-key` - Enforce matching of a specific tag key-value pair in a resource
+- `aws:PrincipalTag/tag-key` - Use the value of the specific tag-key of the principal
 - `aws:TagKeys `- Enforce use of specific tag keys in an API call
 
 Check the [list of SageMaker actions and supported IAM condition keys](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html) to see which SageMaker action support which condition keys.

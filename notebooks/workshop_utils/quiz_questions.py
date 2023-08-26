@@ -119,7 +119,7 @@ lab1_question4 = Quiz(
 
 lab1_question5 = Quiz(
     question={
-        "question": "How can you control user prermissions in Studio?",
+        "question": "How can you control user permissions in Studio?",
         "options": [
             "By configuring IAM permission policies for user profile execution roles",
             "By configuring IAM permission policies for IAM role assumed by the user after signing in AWS Account",
@@ -127,5 +127,71 @@ lab1_question5 = Quiz(
             "By configuring iam:PassRole for sagemaker.amazonaws.com",
         ],
         "correctIndex": 0,
+    }
+)
+
+# Lab 03
+lab3_question1 = Quiz(
+    question={
+        "question": "Where can you find all SageMaker logs from KernelGateways, jobs, and endpoints?",
+        "options": [
+            "Log files on the underlying EC2 instances",
+            "Studio terminal",
+            "Amazon CloudWatch",
+            "Amazon SageMaker Logs",
+        ],
+        "correctIndex": 2,
+    }
+)
+
+lab3_question2 = Quiz(
+    question={
+        "question": "Where can you find all SageMaker API calls made by a principal (except InvokeEndpoint and InvokeEndpointAsync)?",
+        "options": [
+            "Amazon CloudWatch",
+            "Amazon CloudTrail",
+            "AWS Security Hub",
+            "API calls are not logged by default",
+        ],
+        "correctIndex": 1,
+    }
+)
+
+lab3_question3 = Quiz(
+    question={
+        "question": "How can you control access to resources in AWS accounts?",
+        "options": [
+            "IAM identity-based and resource-based policies",
+            "Resource access perimeters",
+            "Account-wide resource policies",
+            "API calls parameters",
+        ],
+        "correctIndex": 0,
+    }
+)
+
+lab3_question4 = Quiz(
+    question={
+        "question": "How can you enforce a specific network configuration for SageMaker API CreateProcessingJob?",
+        "options": [
+            "Using VPC endpoints",
+            "Using AWS Network Firewall",
+            "Using IAM policy conditions",
+            "Using EC2 security groups",
+        ],
+        "correctIndex": 2,
+    }
+)
+
+lab3_question5 = Quiz(
+    question={
+        "question": "Which detective AWS service can you use to detect sensitive data in S3 buckets?",
+        "options": [
+            "Amazon GuardDuty",
+            "S3 server access logs",
+            "Amazon Macie",
+            "AWS Security Hub",
+        ],
+        "correctIndex": 2,
     }
 )
